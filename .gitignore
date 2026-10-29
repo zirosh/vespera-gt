@@ -1,0 +1,4 @@
+dist/_test.html
+__pycache__/
+*.png
+node_modules/
