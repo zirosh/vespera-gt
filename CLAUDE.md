@@ -35,6 +35,7 @@ src/track/track-b15.js interfaccia da console: menu iniziale e schermate (Gara v
 src/track/track-b16.js scocca rigida 3D con Rapier: sospensioni per ruota, carichi dalle molle, guard rail e contatti fra auto, urti → danni
 src/track/track-b17.js circuito cittadino (TRKDEF.urban): muri con rete, palazzi istanziati, mare, lampioni, finestre accese di notte
 src/track/track-b18.js asfalto fotografico Poly Haven su tutti i circuiti, modelli glTF CC0 istanziati (panchine, fioriere, barili, gomme)
+src/track/track-b19.js assetto nel Garage (molle, barre antirollio → SETUP.kf/kr ed equilibrium, scocca Rapier dei giocatori), ruote che seguono le molle, vibrazione dai carichi
 src/console.css        stile dell'interfaccia da console (incollato dopo game.css)
 src/assets/            immagini JPG CC0 di ambientCG (vedi LEGGIMI.md), copiate in dist/assets da build.py
 vendor/three/          three.js r128, OrbitControls, GLTFLoader, RGBELoader (licenza MIT), copiati in dist/lib
@@ -43,7 +44,7 @@ build.py               incolla i file in base.html e scrive dist/index.html
 tools/                 simulazioni e prove (vedi sotto)
 ```
 I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/* viste */`, nell'ordine
-`track-core, track-a, b1 … b18`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
+`track-core, track-a, b1 … b19`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
 
 ## Comandi
 - Build: `python3 build.py` → `dist/index.html` (va rifatta dopo ogni modifica in `src/`).
@@ -58,6 +59,7 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
   Il banco comune è `tools/harness.js`. `racesim.js` include i danni (`DMG=0` per spegnerli) e stampa danni massimi e finali.
 - Scocca Rapier: `node tools/rb-t.js` (carichi, 0-100, frenata con beccheggio, curva con rollio, cordoli, salti); `RB=0` davanti a
   qualsiasi prova (racesim, harness) usa la fisica piana per confrontare. Le prove basate su harness aspettano `ready` prima di partire.
+- Assetto: `node tools/setup-t.js` (stessa sterzata con assetti diversi; `ASSIST=0 S1=0.7 S2=0.4` per il limite): barra anteriore → meno imbardata.
 - Materiali e modelli CC0: `python3 tools/fetch_assets.py` (Poly Haven e ambientCG, serve la rete verso quei siti) li rimette in src/assets;
   build.py li copia in dist/assets e mette ogni `ph-*.jpg`/`acg-*.jpg` in TRK_PHOTO con il nome del file come chiave.
 - Dati dei circuiti (lunghezza, curve, dislivello): `node tools/t2check.js`; progetto di un nuovo tracciato: `tools/t3design.js`.
