@@ -268,9 +268,9 @@ TAB='''  <section class="tab" id="tPista" hidden>
       <h2 style="margin-top:10px"><label for="trkKw">Potenza</label><output id="trkKwOut"></output></h2>
       <input type="range" id="trkKw" min="40" max="900" step="5" value="460">
       <h2 style="margin-top:10px">Gomme</h2><div class="seg" id="trkTires"></div>
-      <div class="toggles" style="margin-top:8px"><button class="tog" id="trkAssist" aria-pressed="true">Assistenze</button><button class="tog" id="trkSame" aria-pressed="false">Blocca massa e potenza</button></div>
+      <div class="toggles" style="margin-top:8px"><button class="tog" id="trkAssist" aria-pressed="true">Assistenze</button><button class="tog" id="trkSame" aria-pressed="false">Blocca massa e potenza</button><button class="tog" id="trkLine" aria-pressed="true">Traiettoria consigliata</button><button class="tog" id="trkDmg" aria-pressed="true">Danni</button></div>
       <button class="small-btn" id="trkTypical" style="margin-top:8px">Valori tipici di questa auto</button>
-      <p class="note">Le assistenze (controllo di trazione e di stabilità, sterzo dosato) rendono l'auto guidabile da tastiera. Con «Blocca» massa e potenza restano uguali quando cambi auto, così il confronto riguarda solo l'aerodinamica.</p>
+      <p class="note">Le assistenze (controllo di trazione e di stabilità, sterzo dosato) rendono l'auto guidabile da tastiera. La traiettoria consigliata si colora secondo la tua velocità: verde gas, giallo alza il piede, rosso frena. Con i danni gli urti piegano ali e sospensioni: l'auto tira da un lato e carica meno, finché non la ripari ai box (la sosta si allunga). Con «Blocca» massa e potenza restano uguali quando cambi auto, così il confronto riguarda solo l'aerodinamica.</p>
     </div>
     <div class="group">
       <div class="cxrow"><span class="cxbig" id="trkLap">—</span><small>giro ideale calcolato</small></div>
@@ -302,7 +302,12 @@ rep('  <section class="tab" id="tAria" hidden>', TAB+'  <section class="tab" id=
 core=open(TR+'track-core.js').read()
 core=re.sub(r"if\(typeof module!=='undefined'\)module\.exports=\{[^\n]*\n","",core)
 assert 'module.exports' not in core
-page=open(TR+'track-a.js').read()+''.join(open(TR+f).read() for f in ['track-b1.js','track-b2.js','track-b3.js','track-b4.js','track-b5.js','track-b6.js','track-b7.js','track-b8.js','track-b9.js','track-b10.js','track-b11.js'])
+page=open(TR+'track-a.js').read()+''.join(open(TR+f).read() for f in ['track-b1.js','track-b2.js','track-b3.js','track-b4.js','track-b5.js','track-b6.js','track-b7.js','track-b8.js','track-b9.js','track-b10.js','track-b11.js','track-b12.js','track-b13.js','track-b14.js'])
+# texture fotografiche (src/assets) dentro la pagina come data URI
+import base64,json
+FOTO={k:'data:image/jpeg;base64,'+base64.b64encode(open(SP+'assets/'+f,'rb').read()).decode() for k,f in [('gravelC','gravel-color.jpg'),('gravelN','gravel-normal.jpg'),('grassC','grass-color.jpg'),('asphC','asphalt-color.jpg')]}
+assert '/*@FOTO@*/{}' in page
+page=page.replace('/*@FOTO@*/{}',json.dumps(FOTO))
 rep('/* viste */\nlet camTween=null', core+page+'\n/* viste */\nlet camTween=null')
 
 # ciclo di rendering

@@ -198,6 +198,9 @@ html.gm.duo #thKeys{display:none}
 .g-tyres i{position:absolute;width:8px;height:14px;border-radius:2px;background:#3ee07f;box-shadow:0 0 6px rgba(0,0,0,.6)}
 .g-tyres i:nth-child(1){left:-6px;top:6px}.g-tyres i:nth-child(2){right:-6px;top:6px}.g-tyres i:nth-child(3){left:-6px;bottom:6px}.g-tyres i:nth-child(4){right:-6px;bottom:6px}
 .g-tyres i.off{outline:2px solid #c9a46a;outline-offset:1px}
+/* danni: ali sopra e sotto la sagoma, testo sotto le gomme */
+.g-tyres .dw{position:absolute;left:2px;right:2px;height:4px;border-radius:2px;background:transparent}.g-tyres .dw.f{top:-8px}.g-tyres .dw.r{bottom:-8px}
+.v-dmg{color:#ffb35c;font-size:11px;font-weight:600;letter-spacing:.02em}
 html.gm .th-speed{position:absolute}
 /* schede dei circuiti */
 html.gm .trk-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:none;padding:0}
