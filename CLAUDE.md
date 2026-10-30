@@ -30,7 +30,7 @@ src/track/track-b10.js freni che si scaldano, sporco sulle carrozzerie, commissa
 src/track/track-b11.js ventola aspirante (fan car)
 src/track/track-b12.js traiettoria consigliata colorata (verde gas, giallo alza, rosso frena) sul profilo lapSim della tua auto
 src/track/track-b13.js danni: ali e sospensioni piegate dagli urti, convergenza storta, meno carico, riparazione ai box
-src/track/track-b14.js texture fotografiche CC0 (ghiaia, prato, inerti dell'asfalto) incorporate da src/assets
+src/track/track-b14.js texture fotografiche CC0 (ghiaia, prato, inerti dell'asfalto) e luce da HDRI Poly Haven per ora del giorno (trkEnvFor)
 src/track/track-b15.js interfaccia da console: menu iniziale e schermate (Gara veloce, Garage, Officina, Impostazioni) che spostano i blocchi esistenti
 src/console.css        stile dell'interfaccia da console (incollato dopo game.css)
 src/assets/            immagini JPG CC0 di ambientCG (vedi LEGGIMI.md), copiate in dist/assets da build.py
