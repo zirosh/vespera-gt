@@ -34,6 +34,10 @@ src/track/track-b14.js texture fotografiche CC0 (ghiaia, prato, inerti dell'asfa
 src/track/track-b15.js interfaccia da console: menu iniziale e schermate (Gara veloce, Garage, Officina, Impostazioni) che spostano i blocchi esistenti
 src/track/track-b16.js scocca rigida 3D con Rapier: sospensioni per ruota, carichi dalle molle, guard rail e contatti fra auto, urti → danni
 src/track/track-b17.js circuito cittadino (TRKDEF.urban): muri con rete, palazzi istanziati, mare, lampioni, finestre accese di notte
+src/track/track-b18.js asfalto fotografico Poly Haven su tutti i circuiti, modelli glTF CC0 istanziati (panchine, fioriere, barili, gomme)
+src/track/track-b19.js assetto nel Garage (molle, barre antirollio → SETUP.kf/kr ed equilibrium, scocca Rapier dei giocatori), ruote che seguono le molle, vibrazione dai carichi
+src/track/track-b20.js anteprima grande del circuito in Gara veloce, riepilogo di fine gara (posizioni, giro migliore, velocità massima, danni, distacco per giro)
+src/track/track-b21.js occlusione ambientale SSAO (profondità dalla DepthTexture del render target della scena) e FXAA finale, dentro la post-produzione
 src/console.css        stile dell'interfaccia da console (incollato dopo game.css)
 src/assets/            immagini JPG CC0 di ambientCG (vedi LEGGIMI.md), copiate in dist/assets da build.py
 vendor/three/          three.js r128, OrbitControls, GLTFLoader, RGBELoader (licenza MIT), copiati in dist/lib
@@ -42,7 +46,7 @@ build.py               incolla i file in base.html e scrive dist/index.html
 tools/                 simulazioni e prove (vedi sotto)
 ```
 I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/* viste */`, nell'ordine
-`track-core, track-a, b1 … b17`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
+`track-core, track-a, b1 … b21`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
 
 ## Comandi
 - Build: `python3 build.py` → `dist/index.html` (va rifatta dopo ogni modifica in `src/`).
@@ -57,12 +61,17 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
   Il banco comune è `tools/harness.js`. `racesim.js` include i danni (`DMG=0` per spegnerli) e stampa danni massimi e finali.
 - Scocca Rapier: `node tools/rb-t.js` (carichi, 0-100, frenata con beccheggio, curva con rollio, cordoli, salti); `RB=0` davanti a
   qualsiasi prova (racesim, harness) usa la fisica piana per confrontare. Le prove basate su harness aspettano `ready` prima di partire.
+- Assetto: `node tools/setup-t.js` (stessa sterzata con assetti diversi; `ASSIST=0 S1=0.7 S2=0.4` per il limite): barra anteriore → meno imbardata.
+- Materiali e modelli CC0: `python3 tools/fetch_assets.py` (Poly Haven e ambientCG, serve la rete verso quei siti) li rimette in src/assets;
+  build.py li copia in dist/assets e mette ogni `ph-*.jpg`/`acg-*.jpg` in TRK_PHOTO con il nome del file come chiave.
 - Dati dei circuiti (lunghezza, curve, dislivello): `node tools/t2check.js`; progetto di un nuovo tracciato: `tools/t3design.js`.
 - Prove nel browser (Playwright + Chromium software):
   `python3 tools/mk_test.py` (crea `dist/_test.html` con un finto `window.claude` e agganci `__TRK()`, `__STEP(n)`, `__RENDER()`, `__CH()`),
   poi `python3 -m http.server 8766 --directory dist` in background e
   `python3 tools/shot.py 1280 720 "js…" "~ms" "@cattura.png" "?espressione"`.
   Le catture vanno guardate: molti problemi sono solo visivi.
+  Controller: `python3 tools/pad-t.py` (pad Xbox finto: menu, Garage, Officina, Impostazioni, campionato, pista, pausa; deve finire con TUTTO OK).
+  Le variabili della pagina (TRK, CS, chEl…) si leggono con `__EV('espressione')`, aggiunto da mk_test.py.
   `PW_CHROMIUM=<chromium>` per usare il browser preinstallato.
 
 ## Cose da sapere (errori già fatti)
@@ -95,6 +104,14 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
   `P.car` con `trkRbPlace`. Dopo ogni teletrasporto di `P.car` (reset, test) chiamare `trkRbPlace`. Il suolo è analitico (`trkRbGround`:
   quota della strada e dentellatura dei cordoli), niente collider di terreno; ribaltata per 2 s o sotto il suolo → rimessa dritta.
   Urti = variazione di velocità non spiegata dalle forze applicate → `trkDmgHit`. `trkCollide`, `trkCarsCollide`, `trkVertical` sono saltati.
+- **Porto Vespera** (TRK_DEFS[3]) è un cittadino tortuoso di mare: salita alla piazza (36 m), tornante, galleria (`TRKDEF.tunnel=[X0,X1,Y0]`,
+  tratto con X fra X0 e X1 e Y > Y0), mare oltre `TRKDEF.sea` (Y). I rami del tornante distano ~65 m: va bene in città (muri a 2,4 m).
+- **Passi di tempo minuscoli**: nel browser capitano fotogrammi a pochi decimillesimi di secondo; con Rapier Δv/h esplode. Il wrapper di
+  trkPhysics in track-b16 salta i passi sotto 0,2 ms e, se lo stato diventa comunque non numerico, `trkRbRecover` rimette l'auto all'ultima
+  posizione valida con una scocca nuova. Non togliere queste protezioni.
 - **Circuito cittadino**: `TRKDEF.urban` cambia barriere (muri a 2,4 m, strade di scampo all'esterno delle curve lente), niente ghiaia
   né lago, superficie fuori dal bordo = asfalto, scenario di track-b17. Il mare è a X > −60, Y > 610: niente palazzi lì.
+- **three.js resta alla r128**: dalla r148 non ci sono più `examples/js` e cambiano colori, luci e render target multicampione;
+  aggiornare vorrebbe dire riscrivere materiali e post-produzione. SSAO e FXAA (track-b21) avvolgono `ppEnsure` e `ppFinal` di track-b5:
+  `PP.rt.depthTexture` deve restare DepthStencil a 24 bit (stesso formato del buffer multicampione, altrimenti la copia fallisce).
 - Prestazioni: la scena con 8 auto fa ~1200 draw call; aggiungere oggetti uniti o istanziati, non mesh sciolte.

@@ -720,6 +720,38 @@ html.cs-on .g-info .v-tire,html.cs-on .g-info .v-aero{display:none}
   .cs-go small{display:none}
 }
 
+/* anteprima del circuito nella schermata Gara veloce (track-b20) */
+.cs-left .cs-prev{margin-bottom:10px;padding:14px 18px 12px}
+.cs-prev-k{font:700 11px "Saira",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--gm-acc2,#36d1ff)}
+.cs-prev-n{font:800 italic 22px/1.05 "Saira Condensed",sans-serif;text-transform:uppercase;color:#fff;margin:2px 0 6px}
+.cs-prev canvas{display:block;width:100%;height:auto;aspect-ratio:640/300;max-height:170px;object-fit:contain}
+.cs-prev-d{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 10px;margin:8px 0 0}
+.cs-prev-d div.w{grid-column:1/-1}
+.cs-prev-d dt{font:600 10px "Saira",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#8d98a3}
+.cs-prev-d dd{margin:1px 0 0;font:700 italic 18px "Saira Condensed",sans-serif;color:#eef2f5}
+@media (max-height:900px){.cs[data-s="race"] .cs-left .readout{display:none}.cs-prev canvas{max-height:130px}}
+
+/* riepilogo di fine gara (track-b20) */
+#thRace .tr-me{margin:12px 0 4px}
+.tr-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tr-tiles div{background:rgba(255,255,255,.05);border-left:3px solid var(--gm-acc2,#36d1ff);padding:8px 10px;min-width:0}
+.tr-tiles small{display:block;font:600 10px "Saira",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#8d98a3}
+.tr-tiles b{display:block;font:800 italic 22px/1.1 "Saira Condensed",sans-serif;color:#fff;margin-top:2px;white-space:nowrap}
+.tr-tiles span{display:block;font:500 11px/1.25 "Saira",sans-serif;color:#b9c3cc;margin-top:2px}
+.tr-laps{margin-top:12px}
+.tr-laps>small{font:600 10px "Saira",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#8d98a3}
+.tr-bars{display:flex;align-items:flex-end;gap:2px;height:96px;margin-top:6px;border-bottom:1px solid rgba(255,255,255,.18)}
+.tr-bars div{flex:1;max-width:46px;height:100%;padding-top:14px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative;cursor:default}
+.tr-bars i{display:block;width:62%;background:var(--gm-acc2,#36d1ff);border-radius:4px 4px 0 0;opacity:.85}
+.tr-bars div:hover i{opacity:1}
+.tr-bars div.best i{height:2px!important;width:80%;background:#fff;border-radius:1px}
+.tr-bars div.inv i{background:repeating-linear-gradient(135deg,#36d1ff 0 3px,transparent 3px 6px)}
+.tr-bars em{order:-1;font:600 10px "Saira",sans-serif;font-style:normal;color:#b9c3cc;margin-bottom:3px;white-space:nowrap}
+.tr-bars div.best em{color:#fff}
+.tr-bars u{position:absolute;bottom:-17px;text-decoration:none;font:600 10px "Saira",sans-serif;color:#8d98a3}
+.tr-laps{padding-bottom:16px}
+@media (max-width:720px){.tr-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 @media (max-width:720px){
   .panel{top:auto;bottom:10px;right:10px;left:10px;transform:none;width:auto;max-height:46%;padding:10px 14px 12px}
   .chips{grid-template-columns:repeat(7,minmax(0,34px));justify-content:space-between}
@@ -1107,6 +1139,7 @@ if(typeof WorkerGlobalScope!=='undefined'&&self instanceof WorkerGlobalScope)sel
 <script src="lib/three.min.js"></script>
 <script src="lib/OrbitControls.js"></script>
 <script src="lib/RGBELoader.js"></script>
+<script src="lib/GLTFLoader.js"></script>
 <script>
 (function(){
 "use strict";
@@ -2164,7 +2197,7 @@ function updateSuspension(){
 /* =========================================================
    Assetto, modello aerodinamico dell'auto intera ed equilibrio delle sospensioni
    ========================================================= */
-const SETUP={ride:0.150};
+const SETUP={ride:0.150,kf:1,kr:1}; // kf, kr: rigidezza delle molle rispetto a quella di serie (Garage → Assetto)
 const MASS=1480,STATF=0.51,G=9.81,KF=2*56000,KR=2*66000;
 const WAREA=WING.span*(WING.main+WING.flap),WAR=WING.span/(WING.main+WING.flap);
 const axShare=x=>(x+WX)/(2*WX);
@@ -2237,7 +2270,7 @@ const C0F=MASS*G*STATF/KF,C0R=MASS*G*(1-STATF)/KR;
 function bumpDefl(x){return x<=0.07?x:0.07+(x-0.07)/13;}
 function equilibrium(kmh){
   const v=kmh/3.6,q=0.5*1.225*v*v;let sf=0,sr=0,m=null;
-  for(let i=0;i<10;i++){m=aeroModel(SETUP.ride-sf,SETUP.ride-sr);sf=0.5*sf+0.5*Math.max(-C0F,bumpDefl(-q*m.front/KF));sr=0.5*sr+0.5*Math.max(-C0R,bumpDefl(-q*m.rear/KR));}
+  for(let i=0;i<10;i++){m=aeroModel(SETUP.ride-sf,SETUP.ride-sr);sf=0.5*sf+0.5*Math.max(-C0F/SETUP.kf,bumpDefl(-q*m.front/(KF*SETUP.kf)));sr=0.5*sr+0.5*Math.max(-C0R/SETUP.kr,bumpDefl(-q*m.rear/(KR*SETUP.kr)));}
   const Nf=MASS*G*STATF-q*m.front,Nr=MASS*G*(1-STATF)-q*m.rear;
   return {m,q,v,sf,sr,cf:SETUP.ride-sf,cr:SETUP.ride-sr,Nf,Nr};
 }
@@ -3725,12 +3758,14 @@ const TRK_DEFS=[
   corners:['Curva del Brenta','Tornante Basso','Tornante Alto','Cima','Curvone della Discesa','Esse delle Malghe','Curva del Bosco','Ultima'],
   bridge:[-300,-150,600],tower:[-800,1150]},
  {id:'porto',name:'Circuito Cittadino di Porto Vespera',short:'Porto',banner:'GRAN PREMIO DI PORTO VESPERA',autumn:false,urban:true,
-  /* Porto Vespera: un cittadino in piano fra i palazzi, tutto curve a 90° fra muri di cemento, il lungomare con la chicane del mercato
-     e il tornante del Duomo; niente vie di fuga, solo qualche strada di scampo all'esterno delle curve lente */
-  pts:[[-400,0],[200,0],[560,0],[614,0],[639,11],[650,36],[650,168],[640,190],[618,200],[500,200],[479,209],[470,230],[470,300],[479,321],[500,330],[668,330],[690,340],[700,362],[700,522],[689,549],[662,560],[440,560],[415,578],[365,578],[340,560],[130,560],[109,551],[100,530],[100,450],[91,429],[70,420],[-132,420],[-145,425],[-150,438],[-150,588],[-160,610],[-182,620],[-394,620],[-425,611],[-448,589],[-525,455],[-539,418],[-545,380],[-545,210],[-508,82]],
-  hills:[[0,500,3,220],[-300,300,2,200]],
-  corners:['Curva del Porto','Piazza Grande','Via Roma','Corso Italia','Curva del Faro','Lungomare','Chicane del Mercato','Curva della Stazione','Viale dei Tigli','Tornante del Duomo','Curva del Teatro','Piazza Garibaldi','Curvone dei Bastioni'],
-  bridge:[180,205,550],tower:[-800,1150]}];
+  /* Porto Vespera, sul modello dei grandi cittadini di mare: dopo il via si sale fra i palazzi fino alla piazza del Casinò (36 m),
+     si scende al tornante dell'Albergo (22 km/h), si torna al mare e si passa la galleria in curva, la più veloce del giro;
+     all'uscita la chicane del porto, poi le esse della piscina e la Pescheria prima del curvone che riporta al traguardo */
+  pts:[[-400,0],[200,0],[560,0],[620,0],[636,6],[645,19],[658,67],[662,110],[656,153],[653,162],[647,200],[651,238],[655,251],[654,282],[639,309],[609,337],[588,349],[564,353],[519,351],[506,353],[494,359],[476,376],[464,381],[451,382],[419,373],[405,372],[391,372],[328,382],[312,388],[298,399],[222,485],[218,500],[231,508],[340,520],[423,553],[434,563],[436,578],[424,630],[416,646],[401,657],[150,745],[-100,725],[-150,707],[-185,719],[-210,701],[-235,701],[-258,717],[-325,709],[-357,699],[-385,680],[-420,645],[-401,604],[-433,563],[-414,522],[-468,459],[-473,445],[-468,431],[-440,398],[-520,346],[-537,326],[-545,300],[-545,210],[-508,82]],
+  hills:[[540,330,30,210],[300,440,14,170],[-450,520,5,150]],
+  corners:['Curva di Santa Lucia','Salita del Belvedere','Piazza del Casinò',"Tornante dell'Albergo",'Curva del Molo','Chicane del Porto','Esse della Piscina','Curva della Pescheria','Curvone dei Bastioni'],
+  /* niente ponte: sul lungomare c'è la galleria (track-b17); il mare è oltre Y = 775 */
+  bridge:[1e9,1e9,0],tower:[-800,1150],sea:775,tunnel:[-80,390,690]}];
 const TRK_PTS=[[-400,0],[200,0],[560,0],[700,10],[765,65],[725,128],[640,132],[470,150],[350,195],[290,290],[300,410],[370,540],[500,625],[625,700],[650,790],[575,862],[330,884],[205,885],[168,884],[146,876],[126,864],[104,860],[82,869],[58,881],[10,884],[-150,882],[-330,846],[-430,750],[-468,632],[-436,556],[-472,484],[-528,372],[-545,220],[-510,85]];
 const TRK_W=12;        // larghezza della carreggiata
 /* colline: [X, Y, altezza, raggio] — salita dopo il tornante fino al Curvone, dosso sul rettilineo opposto prima della chicane,
@@ -4157,9 +4192,9 @@ function trkBuildWorld(){
    const sun=new THREE.Mesh(new THREE.SphereGeometry(4,16,8),new THREE.MeshBasicMaterial({color:new THREE.Color(0xfff2d8).multiplyScalar(5)}));sun.position.set(-20,34,-15);es.add(sun);
    trkEnv=pmrem.fromScene(es,0.02).texture;}
   /* prato con le strisce del tosaerba */
-  const grassTex=TRKDEF.urban?trkConcreteTex().map:trkGrassTex().map;
+  const grassTex=TRKDEF.urban?(trkPhotoTex('ph-pavement-color',true)||trkConcreteTex().map):trkGrassTex().map;
   /* prato a riquadri e spinto indietro nella profondità: così non litiga mai con l'asfalto che gli sta 5 cm sopra */
-  const grassMat=trkNightPatch(new THREE.MeshLambertMaterial({map:grassTex,vertexColors:true,polygonOffset:true,polygonOffsetFactor:4,polygonOffsetUnits:8}));TRK.grassMat=grassMat;if(TRKDEF.urban)grassMat.color.setHex(0x46494d);grassMat.userData.wuv=6;grassMat.userData.mac=0.12;
+  const grassMat=trkNightPatch(new THREE.MeshLambertMaterial({map:grassTex,vertexColors:true,polygonOffset:true,polygonOffsetFactor:4,polygonOffsetUnits:8}));TRK.grassMat=grassMat;if(TRKDEF.urban)grassMat.color.setHex(TRK_PHOTO['ph-pavement-color']?0x9a9a9a:0x46494d);grassMat.userData.wuv=6;grassMat.userData.mac=0.12;
   /* terreno con le colline attorno alla pista (celle da 12 m) e una pianura piatta oltre */
   {const g=new THREE.PlaneGeometry(3400,3400,280,280);g.rotateX(-Math.PI/2);const p=g.attributes.position,uv=g.attributes.uv;
    for(let k=0;k<p.count;k++){const X=p.getX(k)+110,Y=-(p.getZ(k)-430);p.setXYZ(k,X,trkGroundH(X,Y),-Y);uv.setXY(k,uv.getX(k)*3400/9000,uv.getY(k)*3400/9000);}
@@ -5257,8 +5292,9 @@ function trkAIDrive(P,dt){
   if(P.errT>0&&P.errKind==='spin'){P.thr=0.15;P.brk=0;}
   /* all'inizio di una staccata decisa può sbagliare: più spesso se irruento, se attacca o sul bagnato */
   if(aCmd<-4&&P.errCool<=0&&P.errT<=0&&TRK.race.state!=='count'&&c.vx>22){/* fra i muri di un cittadino i piloti rischiano meno: errori più rari e staccate lunghe più corte */
-    const pr=ch.err*0.07*(1+2*TRK.wet*(1.4-ch.wet))*(attack?1.6:1)*(TRKDEF.urban?0.35:1);P.errCool=4;
-    if(Math.random()<pr){const spin=TRK.wet>0.35?Math.random()<0.55:Math.random()<0.18;P.errKind=spin?'spin':'lungo';P.errT=spin?0.9:1.7;P.errCool=28+Math.random()*20;P.errs++;
+    const pr=ch.err*0.07*(1+1.2*TRK.wet*(1.4-ch.wet))*(attack?1.6:1)*(TRKDEF.urban?0.35:1);P.errCool=4;
+    if(Math.random()<pr){/* sul bagnato si sbaglia più spesso, ma di solito andando lunghi: i testacoda in mezzo al gruppo fanno carambole */
+      const spin=TRK.wet>0.35?Math.random()<0.35:Math.random()<0.18;P.errKind=spin?'spin':'lungo';P.errT=spin?0.9:1.7;P.errCool=28+Math.random()*20;P.errs++;
       if(spin){c.r+=(Math.random()<0.5?-1:1)*(0.9+Math.random()*0.5);}
       trkRadio(P,spin?`#${P.num} in testacoda${trkCornerAhead(bi)}!`:`#${P.num} lungo in staccata${trkCornerAhead(bi)}`);}}
   /* incastrato o finito lontano dalla pista: si rimette in pista da solo */
@@ -5939,8 +5975,10 @@ function trkPostRender(views){
   const U=ppComp.uniforms;U.tScene.value=PP.rt.texture;['tB0','tB1','tB2','tB3','tB4'].forEach((k,i)=>U[k].value=PP.m[i].a.texture);
   U.uBloom.value=bloom?(night?0.85:TRK.rain>0.3?0.35:0.2):0;U.uExp.value=renderer.toneMappingExposure;U.uTexel.value.set(1/w,1/h);U.tDrops.value=DROP.tex;U.uDrops.value=bloom&&DROP.list.length?1:0;
   {const P=views[0].P,one=views.length===1&&!TRK.replay.on,ck=P.cam==='cockpit';U.uVig.value=TRK.fxPost?(ck?0.4:0.28):0;U.uBlur.value=one&&TRK.fxPost?smooth01(P.kmh,150,330)*(ck?0.5:0.8):0;U.uBlurC.value.set(0.5,ck?0.6:0.56);}
-  renderer.setRenderTarget(null);renderer.setScissorTest(false);renderer.setViewport(0,0,W,H);PP.quad.material=ppComp;renderer.render(PP.scene,PP.cam);
+  ppFinal(views,W,H);
 }
+/* ultimo passaggio sullo schermo (track-b21 lo avvolge per l'occlusione ambientale e l'antialiasing) */
+function ppFinal(views,W,H){renderer.setRenderTarget(null);renderer.setScissorTest(false);renderer.setViewport(0,0,W,H);PP.quad.material=ppComp;renderer.render(PP.scene,PP.cam);}
 
 /* ---------- riflessi: una seconda telecamera, specchiata sotto la strada, vede solo le auto e le luci ---------- */
 const RF={rt:null,w:0,h:0,cam:new THREE.PerspectiveCamera(),U:{uRefl:{value:null},uReflMat:{value:new THREE.Matrix4()},uReflK:{value:0},uRTime:{value:0}},lights:false};
@@ -6162,7 +6200,7 @@ function trkPadFrame(dt){
 /* fuori dalla pista: Menu sul pad scende in pista */
 /* fuori dalla pista il pad comanda anche il garage: croce o levetta per spostarsi fra i comandi visibili, A conferma,
    croce a sinistra e a destra cambia i cursori, LB e RB cambiano scheda, B torna indietro, Menu scende in pista */
-function trkPadIdle(){const L=trkPadList(),p=L[0];document.documentElement.classList.toggle('pad',!!p);if(!p)return;
+function trkPadIdle(){const L=trkPadList(),p=L[0];document.documentElement.classList.toggle('pad',!!p);trkPadPanel();if(!p)return;
   const was=i=>!!PADS.idlePrev[i],hit=i=>padOn(p,i)&&!was(i),now=performance.now();
   if(hit(PAD_B.MENU)&&busy.hidden)trkStart();
   else if(busy.hidden){
@@ -7057,7 +7095,7 @@ if(typeof toggle==='function'&&document.getElementById('trkDmg')){toggle('trkDmg
    della stessa scansione, scuriti e senza colore, a scala più piccola. Le immagini sono dentro la pagina (data URI),
    così il gioco resta un file unico. Se mancano si torna alle texture procedurali
    ========================================================= */
-const TRK_PHOTO={"gravelC": "assets/gravel-color.jpg", "gravelN": "assets/gravel-normal.jpg", "grassC": "assets/grass-color.jpg", "asphC": "assets/asphalt-color.jpg"};
+const TRK_PHOTO={"gravelC": "assets/gravel-color.jpg", "gravelN": "assets/gravel-normal.jpg", "grassC": "assets/grass-color.jpg", "asphC": "assets/asphalt-color.jpg", "acg-facade007-color": "assets/acg-facade007-color.jpg", "acg-facade007-emission": "assets/acg-facade007-emission.jpg", "acg-facade008-color": "assets/acg-facade008-color.jpg", "acg-facade008-emission": "assets/acg-facade008-emission.jpg", "acg-facade010-color": "assets/acg-facade010-color.jpg", "acg-facade010-emission": "assets/acg-facade010-emission.jpg", "acg-facade017-color": "assets/acg-facade017-color.jpg", "acg-facade017-emission": "assets/acg-facade017-emission.jpg", "ph-asphalt-color": "assets/ph-asphalt-color.jpg", "ph-asphalt-normal": "assets/ph-asphalt-normal.jpg", "ph-asphalt-rough": "assets/ph-asphalt-rough.jpg", "ph-pavement-color": "assets/ph-pavement-color.jpg", "ph-pavement-normal": "assets/ph-pavement-normal.jpg", "ph-pavement-rough": "assets/ph-pavement-rough.jpg", "ph-wall-color": "assets/ph-wall-color.jpg", "ph-wall-normal": "assets/ph-wall-normal.jpg", "ph-wall-rough": "assets/ph-wall-rough.jpg"};
 function trkPhotoTex(k,srgb){
   if(!TRK_PHOTO[k])return null;const t=new THREE.Texture(),im=new Image();
   im.onload=()=>{t.image=im;t.needsUpdate=true;};im.src=TRK_PHOTO[k];
@@ -7324,6 +7362,7 @@ function trkRbStep(h){
 /* dalla scocca allo stato dell'auto usato da tutto il resto (posizione, imbardata, velocità nel telaio, accelerazioni) */
 function trkRbSync(P,h){
   const B=P.rb,body=B.body,c=P.car,V=P.veh,t=body.translation(),q=body.rotation(),lv=body.linvel(),av=body.angvel();
+  if(!isFinite(t.x+t.y+t.z+q.w+lv.x+lv.y+lv.z+av.y)){trkRbRecover(P);return;}
   trkRbRot(q,1,0,0,_rv);let dp=Math.atan2(-_rv[2],_rv[0])-c.psi;dp-=Math.round(dp/(2*Math.PI))*2*Math.PI;c.psi+=dp;
   const cp=Math.cos(c.psi),sp=Math.sin(c.psi);c.X=t.x;c.Y=-t.z;
   let vx=lv.x*cp-lv.z*sp,vy=-lv.x*sp-lv.z*cp,r=av.y;
@@ -7335,7 +7374,7 @@ function trkRbSync(P,h){
   if(kb<1||vx!==(lv.x*cp-lv.z*sp)){body.setLinvel({x:vx*cp-vy*sp,y:lv.y,z:-(vx*sp+vy*cp)},true);body.setAngvel({x:av.x,y:r,z:av.z},true);}
   /* accelerazioni nel telaio (servono a freni, aerodinamica e telemetria) */
   const ax=((lv.x-B.v0[0])*cp-(lv.z-B.v0[2])*sp)/h,ay=(-(lv.x-B.v0[0])*sp-(lv.z-B.v0[2])*cp)/h;
-  c.ax+=(ax-c.ax)*Math.min(1,h/0.05);c.ay+=(ay-c.ay)*Math.min(1,h/0.05);c.vx=vx;c.vy=vy;c.r=r;
+  if(isFinite(ax)&&isFinite(ay)){c.ax+=(clamp(ax,-80,80)-c.ax)*Math.min(1,h/0.05);c.ay+=(clamp(ay,-80,80)-c.ay)*Math.min(1,h/0.05);}c.vx=vx;c.vy=vy;c.r=r;
   /* urti: la variazione di velocità che le forze applicate e la gravità non spiegano viene dagli impulsi di contatto */
   const m=V.m,ex=B.F[0]/m*h,ez=B.F[2]/m*h,rx=lv.x-B.v0[0]-ex,rz=lv.z-B.v0[2]-ez;
   /* un urto conta per i primi 80 ms (poi pausa di 0,3 s): strisciare lungo un muro non somma un danno enorme; solo il piano orizzontale */
@@ -7344,22 +7383,37 @@ function trkRbSync(P,h){
   else if(B.cool>0){B.cool-=h;if(rh>h*120){B.hit[0]=rx;B.hit[2]=rz;B.hitT=0.08;B.cool=0;}}
   else if(rh>h*25){B.hit[0]=rx;B.hit[2]=rz;B.hitT=0.08;}
   P.gm=(B.fz[0]+B.fz[1]+B.fz[2]+B.fz[3])/(m*9.81);
+  if(isFinite(c.X+c.Y+c.psi))B.good={X:c.X,Y:c.Y,psi:c.psi,i:c.i,d:c.d};
   P.zc=t.y-B.h;if(P.air&&!B.wasAir)B.landV=0;if(P.air)B.landV=Math.min(B.landV,lv.y);
   /* ribaltata (tetto verso il basso) per più di due secondi, o finita sotto il suolo: i commissari la rimettono dritta */
   trkRbRot(q,0,1,0,_rw);const gH=trkRbGround(c.X,c.Y,c.i);
   if(_rw[1]<0.35)B.flipT=(B.flipT||0)+h;else B.flipT=0;
   if(B.flipT>2||t.y<gH-1){B.flipT=0;c.vx=0;c.vy=0;c.r=0;trkRbPlace(P);if(!P.isAI)trkToast(P,'Auto ribaltata: i commissari la rimettono in pista',2.4);}
 }
+/* il motore fisico ha restituito valori non numerici: l'auto torna ferma all'ultima posizione valida, con una scocca nuova */
+function trkRbRecover(P){
+  const c=P.car,G=P.rb&&P.rb.good;trkRbDrop(P);
+  if(G)Object.assign(c,G);for(const k of ['vx','vy','r','ax','ay','delta'])c[k]=0;
+  if(!isFinite(c.X+c.Y+c.psi)||c.i==null||!isFinite(c.i)){trkReset(P,false);}
+  trkWheelSync(P);
+}
 /* fine di un urto: danni, avviso e giro non valido come con le barriere di prima */
 function trkRbHit(P){
   const B=P.rb,c=P.car,hx=B.hit[0],hz=B.hit[2],dv=Math.hypot(hx,hz);B.hit.fill(0);if(dv<1.5)return;
   const cp=Math.cos(c.psi),sp=Math.sin(c.psi),bx=-(hx*cp-hz*sp),by=-(-hx*sp-hz*cp),l=Math.hypot(bx,by)||1;
-  if(typeof trkDmgHit==='function')trkDmgHit(P,dv,bx/l,by/l);
-  if(dv>2&&P.collT<=0){const car=TRK.cars.some(Q=>Q!==P&&Math.hypot(Q.car.X-c.X,Q.car.Y-c.Y)<6);trkToast(P,car?'Contatto!':'Contatto con il guard rail',1.4);trkThump(P,Math.min(1,dv/10));P.collT=1.2;if(!car&&P.lap)P.lap.valid=false;}
+  /* contro un'altra auto (carrozzerie che cedono) il danno è minore che contro un muro di cemento */
+  const car=TRK.cars.some(Q=>Q!==P&&Math.hypot(Q.car.X-c.X,Q.car.Y-c.Y)<6);
+  if(typeof trkDmgHit==='function')trkDmgHit(P,car?dv*0.7:dv,bx/l,by/l);
+  if(dv>2&&P.collT<=0){trkToast(P,car?'Contatto!':'Contatto con il guard rail',1.4);trkThump(P,Math.min(1,dv/10));P.collT=1.2;if(!car&&P.lap)P.lap.valid=false;}
 }
 
 /* ---------- agganci ---------- */
 {const f=trkPhysics;trkPhysics=function(P,h){
+  /* fotogrammi quasi sovrapposti danno passi nulli o di pochi decimillesimi di secondo: le accelerazioni (Δv/h) esploderebbero.
+     Sotto 0,2 ms il passo si salta (il tempo perso è trascurabile) */
+  if(!(h>2e-4))return;
+  /* rete di sicurezza: un valore non numerico nello stato dell'auto non deve propagarsi (si azzera, e la scocca torna dov'è l'auto) */
+  {const c=P.car;if(!isFinite(c.X+c.Y+c.psi+c.ax+c.ay+c.vx+c.vy+c.r+c.delta))trkRbRecover(P);}
   if(!trkRbUse(P)){if(P.rb)trkRbDrop(P);return f(P,h);}
   if(RB.pend.has(P))trkRbStep(h);
   trkRbSusp(P,h);f(P,h);};}
@@ -7403,14 +7457,15 @@ const TRK_FACADE=[0xf1e3c4,0xe8c690,0xd9a273,0xefd9b0,0xe3b98f,0xd8d2c4,0xf3eadb
 function trkCityBuild(){
   const T=TRK.T,N=T.N,hw=T.w/2,D=TRKDEF,tw=TRK.tw;
   /* muri: cemento alto un metro all'esterno della carreggiata, con la rete sopra (lungo il rettilineo dei box il muretto c'è già) */
-  const wall=trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial({color:0xc8cacc,map:trkConcreteTex().map,roughness:0.9,side:THREE.DoubleSide,envMapIntensity:0.3}),3,0.1));
+  const wC=trkPhotoTex('ph-wall-color',true),wN=trkPhotoTex('ph-wall-normal',false);
+  const wall=trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial(Object.assign({color:wC?0xe6e6e6:0xc8cacc,map:wC||trkConcreteTex().map,roughness:0.9,side:THREE.DoubleSide,envMapIntensity:0.3},wN?{normalMap:wN}:{})),3,0.1));
   const fen=new THREE.MeshStandardMaterial({map:trkMeshFenceTex(),transparent:true,alphaTest:0.35,side:THREE.DoubleSide,metalness:0.5,roughness:0.5});fen.map.repeat.set(1,1);
   {const Pd=TRK.pit;
    trkRibbon(Pd.qB+32-N,Pd.qIn+28,i=>TRK.bar[0][i],0,0,4,wall,1.05);trkRibbon(0,N,i=>-TRK.bar[1][i],0,0,4,wall,1.05);
    trkRibbon(Pd.qB+32-N,Pd.qIn+28,i=>TRK.bar[0][i]+0.05,0,1.05,3,fen,3.6);trkRibbon(0,N,i=>-TRK.bar[1][i]-0.05,0,1.05,3,fen,3.6);}
   /* palazzi: lungo le strade, oltre il marciapiede, senza invadere la pista, il mare o i palazzi già messi */
   const blds=[],near=(X,Y,r)=>{for(const b of blds)if(Math.hypot(b.X-X,b.Y-Y)<b.r+r)return true;return false;};
-  const sea=(X,Y)=>X>-60&&Y>610;
+  const sea=(X,Y)=>Y>(D.sea||1e9);
   const clear=(X,Y,r)=>{if(sea(X,Y))return false;const d=trkDistTrack(X,Y,3);if(d<hw+r+7)return false;
     const n=trkNearest(X,Y);if(n.i>=0){const s=((X-T.X[n.i])*T.nx[n.i]+(Y-T.Y[n.i])*T.ny[n.i])>0?0:1;if(d<TRK.bar[s][n.i]+r*0.75+5)return false;}
     if(TRK.pitZone&&n.i>=0&&TRK.pitZone[n.i]&&d<70)return false;return !near(X,Y,r);};
@@ -7422,17 +7477,30 @@ function trkCityBuild(){
   /* seconda fila e quartieri: più alti man mano che ci si allontana */
   for(let k=0,tries=0;k<520&&tries<9000;tries++){const X=-1000+R()*2300,Y=-500+R()*1700,W=16+R()*22,Dp=16+R()*22,r=Math.hypot(W,Dp)/2*0.8;
     if(!clear(X,Y,r))continue;const d=trkDistTrack(X,Y,6);blds.push({X,Y,W,D:Dp,H:14+R()*(18+Math.min(60,d*0.08)),a:R()<0.7?Math.round(R()*2)*Math.PI/2:R()*Math.PI,r});k++;}
-  const F=trkFacadeTex();
-  const facade=trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial({color:0xffffff,map:F.map,emissiveMap:F.lit,emissive:0xffc77a,emissiveIntensity:0,roughness:0.85,envMapIntensity:0.35}),12,0.08));
-  const roof=new THREE.MeshLambertMaterial({color:0x8a8178});
+  /* facciate: quattro fotografie di ambientCG con le finestre accese di notte (mappa di emissione), o la facciata generata se mancano */
+  const roof=new THREE.MeshLambertMaterial({color:0x8a8178}),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),ps=new THREE.Vector3(),sc=new THREE.Vector3(),c=new THREE.Color(),up=new THREE.Vector3(0,1,0);
   const g=new THREE.BoxGeometry(1,1,1);g.translate(0,0.5,0);
-  const M=new THREE.InstancedMesh(g,[facade,facade,roof,roof,facade,facade],blds.length),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),ps=new THREE.Vector3(),sc=new THREE.Vector3(),c=new THREE.Color(),up=new THREE.Vector3(0,1,0);
-  blds.forEach((b,k)=>{ps.set(b.X,trkGroundH(b.X,b.Y)-0.3,-b.Y);q.setFromAxisAngle(up,b.a);sc.set(b.W,b.H,b.D);m4.compose(ps,q,sc);M.setMatrixAt(k,m4);M.setColorAt(k,c.setHex(TRK_FACADE[k%TRK_FACADE.length]));});
-  M.instanceColor.needsUpdate=true;M.castShadow=M.receiveShadow=true;M.frustumCulled=false;tw.add(M);TRK.cityFacade=facade;
+  const photos=['facade007','facade008','facade010','facade017'].filter(n=>TRK_PHOTO['acg-'+n+'-color']);
+  const mats=photos.length?photos.map(n=>{const e=trkPhotoTex('acg-'+n+'-emission',true);return trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial(Object.assign({color:0xffffff,map:trkPhotoTex('acg-'+n+'-color',true),roughness:0.6,metalness:0.1,envMapIntensity:0.6,emissiveIntensity:0},e?{emissiveMap:e,emissive:0xffffff}:{})),10,0.06));})
+    :[(()=>{const F=trkFacadeTex();return trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial({color:0xffffff,map:F.map,emissiveMap:F.lit,emissive:0xffc77a,emissiveIntensity:0,roughness:0.85,envMapIntensity:0.35}),12,0.08));})()];
+  TRK.cityFacades=mats;
+  mats.forEach((mat,j)=>{const list=blds.filter((b,k)=>k%mats.length===j);if(!list.length)return;
+    const M=new THREE.InstancedMesh(g,[mat,mat,roof,roof,mat,mat],list.length);
+    list.forEach((b,k)=>{ps.set(b.X,trkGroundH(b.X,b.Y)-0.3,-b.Y);q.setFromAxisAngle(up,b.a);sc.set(b.W,b.H,b.D);m4.compose(ps,q,sc);M.setMatrixAt(k,m4);M.setColorAt(k,c.setHex(photos.length?0xffffff:TRK_FACADE[k%TRK_FACADE.length]));});
+    M.instanceColor.needsUpdate=true;M.castShadow=M.receiveShadow=true;M.frustumCulled=false;tw.add(M);});
   /* il mare oltre il lungomare */
-  {const sh=new THREE.Shape([new THREE.Vector2(-60,612),new THREE.Vector2(2400,612),new THREE.Vector2(2400,3200),new THREE.Vector2(-60,3200)]);
+  if(D.sea){const y0=D.sea,sh=new THREE.Shape([new THREE.Vector2(-2400,y0),new THREE.Vector2(2400,y0),new THREE.Vector2(2400,3200),new THREE.Vector2(-2400,3200)]);
    const w=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshStandardMaterial({color:0x1d4f6b,roughness:0.12,metalness:0.1,envMapIntensity:1.2}));
    w.rotation.x=-Math.PI/2;w.position.y=0.25;w.receiveShadow=true;tw.add(w);}
+  /* galleria sul lungomare: soffitto di cemento a 6,5 m che fa ombra, tubi di luce lungo il soffitto; il buio dentro viene dall'ombra */
+  if(D.tunnel){const [x0,x1,y0]=D.tunnel;let i0=-1,i1=-1;for(let i=0;i<N;i++){const in_=T.X[i]>x0&&T.X[i]<x1&&T.Y[i]>y0;if(in_&&i0<0)i0=i;if(in_)i1=i;}
+    if(i0>0&&i1>i0){/* soffitto e pareti scuri e senza luce propria: dentro la galleria si passa nella penombra, con i tubi di luce sopra */
+      const roofM=trkWorldMap(new THREE.MeshBasicMaterial({color:0x34373a,map:trkConcreteTex().map,side:THREE.DoubleSide}),3,0.1);
+      const r=trkRibbon(i0,i1,i=>TRK.bar[0][i]+0.8,i=>-TRK.bar[1][i]-0.8,6.5,6,roofM);r.castShadow=true;
+      for(const s of [0,1])trkRibbon(i0,i1,i=>(s?-1:1)*(TRK.bar[s][i]+0.8),0,1.05,4,roofM,6.5).castShadow=true;
+      const lt=new THREE.MeshBasicMaterial({color:new THREE.Color(0xffe6b8).multiplyScalar(2.2),side:THREE.DoubleSide});
+      for(const o of [-2.2,2.2])trkRibbon(i0,i1,o-0.12,o+0.12,6.45,4,lt);
+      TRK.tunnel=[i0,i1];}}
   /* lampioni lungo i muri, ogni 40 metri */
   {const pole=new THREE.CylinderGeometry(0.09,0.13,8,6);pole.translate(0,4,0);const arm=new THREE.BoxGeometry(1.6,0.12,0.25);arm.translate(-0.8,7.9,0);
    const lamp=new THREE.BoxGeometry(0.7,0.18,0.35);lamp.translate(-1.5,7.8,0);
@@ -7445,7 +7513,236 @@ function trkCityBuild(){
 {const f=trkBuildWorld;trkBuildWorld=function(){const was=TRK.built;f();if(!was&&TRKDEF.urban)trkCityBuild();};}
 /* di notte si accendono finestre e lampioni */
 {const f=trkAtmo;trkAtmo=function(){f();if(!TRK.built||!TRKDEF.urban)return;const n=TRK.tod==='night',s=TRK.tod==='sunset';
-  if(TRK.cityFacade)TRK.cityFacade.emissiveIntensity=n?1.1:s?0.35:0;if(TRK.cityLamp)TRK.cityLamp.emissiveIntensity=n?3:s?1:0;};}
+  if(TRK.cityFacades)for(const m of TRK.cityFacades)m.emissiveIntensity=n?1.1:s?0.35:0;if(TRK.cityLamp)TRK.cityLamp.emissiveIntensity=n?3:s?1:0;};}
+/* =========================================================
+   Materiali e oggetti CC0 di Poly Haven (tools/fetch_assets.py, licenze in src/assets/LEGGIMI.md):
+   asfalto da pista fotografico (colore e rilievo) su tutti i circuiti; panchine e fioriere lungo i marciapiedi del cittadino,
+   barili dietro i box. I modelli glTF arrivano dopo la costruzione del mondo e vengono istanziati (un draw call per pezzo)
+   ========================================================= */
+{const f=trkAsphaltTex;trkAsphaltTex=function(){if(TXL.asphPH)return TXL.asphPH;
+  const m=trkPhotoTex('ph-asphalt-color',true),n=trkPhotoTex('ph-asphalt-normal',false);return TXL.asphPH=m&&n?{map:m,normal:n,ph:true}:f();};}
+/* scala: un quadro di asfalto ogni 3 m, rilievo un po' più marcato degli inerti generati */
+{const f=trkBuildWorld;trkBuildWorld=function(){const was=TRK.built;f();if(was)return;
+  if(TXL.asphPH&&TXL.asphPH.ph&&TRK.asphalt){TRK.asphalt.userData.wuv=3;TRK.asphalt.normalScale.set(0.7,0.7);}
+  trkPropsPlace();};}
+const PROPS={cache:{},loader:null};
+/* un modello glTF diventa una lista di pezzi {geometria, materiale, matrice nel modello}, caricato una volta sola */
+function trkPropLoad(name,cb){
+  if(!THREE.GLTFLoader)return;const C=PROPS.cache[name];if(C){if(C.parts)cb(C.parts);else C.wait.push(cb);return;}
+  const E=PROPS.cache[name]={parts:null,wait:[cb]};PROPS.loader=PROPS.loader||new THREE.GLTFLoader();
+  PROPS.loader.load('assets/models/'+name+'.gltf',g=>{const parts=[];g.scene.updateMatrixWorld(true);
+    g.scene.traverse(o=>{if(o.isMesh)parts.push({geo:o.geometry,mat:o.material,m:o.matrixWorld.clone()});});
+    E.parts=parts;E.wait.forEach(f=>f(parts));E.wait=[];},undefined,()=>{});
+}
+/* posa: lista di [X, Y (piano della pista), quota, rotazione, scala] → istanze di ogni pezzo nel gruppo del circuito */
+function trkPropInstances(name,list,tw){
+  if(!list.length)return;trkPropLoad(name,parts=>{if(TRK.tw!==tw)return;
+    const M=new THREE.Matrix4(),q=new THREE.Quaternion(),ps=new THREE.Vector3(),sc=new THREE.Vector3(),up=new THREE.Vector3(0,1,0);
+    for(const p of parts){const I=new THREE.InstancedMesh(p.geo,p.mat,list.length);
+      list.forEach(([X,Y,h,a,s],k)=>{ps.set(X,h,-Y);q.setFromAxisAngle(up,a);sc.set(s,s,s);M.compose(ps,q,sc).multiply(p.m);I.setMatrixAt(k,M);});
+      I.castShadow=I.receiveShadow=true;I.frustumCulled=false;tw.add(I);}});
+}
+function trkPropsPlace(){
+  const T=TRK.T,N=T.N,tw=TRK.tw,R=trkRng(131);
+  /* cittadino: panchine rivolte alla strada e fioriere lungo i marciapiedi, dietro i muri */
+  if(TRKDEF.urban){const bench=[],plant=[];
+    for(let i=10;i<N;i+=26)for(const sg of [1,-1]){const s=sg>0?0:1;if(TRK.pitZone&&TRK.pitZone[i])continue;if(TRK.tunnel&&i>=TRK.tunnel[0]&&i<=TRK.tunnel[1])continue;
+      const o=TRK.bar[s][i]+3.2,X=T.X[i]+T.nx[i]*sg*o,Y=T.Y[i]+T.ny[i]*sg*o,a=Math.atan2(T.ty[i],T.tx[i]);
+      if(TRKDEF.sea&&Y>TRKDEF.sea)continue;
+      if(R()<0.5)bench.push([X,Y,T.h[i],a+(sg>0?Math.PI:0),1]);else plant.push([X,Y,T.h[i],a,1]);}
+    trkPropInstances('painted_wooden_bench',bench,tw);trkPropInstances('planter_box_01',plant,tw);}
+  /* box: barili e pneumatici di scorta dietro le piazzole */
+  if(TRK.pit){const Pd=TRK.pit,barrel=[],tyre=[];
+    for(const q of Pd.box){const i=((Math.round(q)%N)+N)%N,o=trkBarQ(q)+Pd.boxOff+6.5,X=T.X[i]+T.nx[i]*o,Y=T.Y[i]+T.ny[i]*o;
+      barrel.push([X+2,Y,T.h[i],R()*6.28,1]);barrel.push([X+2.7,Y+0.4,T.h[i],R()*6.28,1]);
+      for(let k=0;k<4;k++)tyre.push([X-2,Y-1+k*0.01,T.h[i]+k*0.24,R()*6.28,1]);}
+    trkPropInstances('barrel_03',barrel,tw);trkPropInstances('old_tyre',tyre,tw);}
+}
+/* =========================================================
+   Assetto nel Garage, sospensioni che si vedono, vibrazione dai carichi veri.
+   Molle anteriori e posteriori: cambiano quanto l'auto si abbassa col carico aerodinamico (SETUP.kf e SETUP.kr in equilibrium,
+   quindi anche il profilo di lapSim) e la rigidezza della scocca Rapier. Barre antirollio: spostano il trasferimento di carico
+   in curva fra gli assi (solo con la scocca 3D): più barra davanti = più sottosterzo, più barra dietro = più sovrasterzo.
+   Valgono per le auto dei giocatori; i piloti del computer restano con l'assetto di serie.
+   ========================================================= */
+const SUSP_DEF={kf:56,kr:66,af:3,ar:0},SUSP=Object.assign({},SUSP_DEF);
+try{const s=JSON.parse(localStorage.getItem('vespera-susp')||'null');if(s)for(const k in SUSP_DEF)if(isFinite(s[k]))SUSP[k]=+s[k];}catch(e){}
+function trkSuspSync(){if(typeof SETUP==="undefined")return;SETUP.kf=SUSP.kf/SUSP_DEF.kf;SETUP.kr=SUSP.kr/SUSP_DEF.kr;}
+trkSuspSync();
+function trkSuspKey(){return SUSP.kf+'|'+SUSP.kr+'|'+SUSP.af+'|'+SUSP.ar;}
+
+/* scocca Rapier dell'auto di un giocatore: molle, ammortizzatori (seguono la radice della rigidezza) e barre dall'assetto */
+{const f=trkRbCar;trkRbCar=function(P){f(P);const B=P.rb;if(!B)return;B.sk=P.isAI?'':trkSuspKey();if(P.isAI)return;
+  const ks=P.veh.m/1480,kF=SUSP.kf*1000*ks,kR=SUSP.kr*1000*ks;
+  B.k=[kF,kF,kR,kR];B.c=B.c.map((c,k)=>c*Math.sqrt((k<2?SUSP.kf/SUSP_DEF.kf:SUSP.kr/SUSP_DEF.kr)));B.arb=[SUSP.af*4000*ks,SUSP.ar*4000*ks];
+  B.xs=B.fz.map((F,k)=>F/B.k[k]);B.L0=B.xs.map(x=>B.h+x);};}
+/* assetto cambiato nel Garage: la scocca dei giocatori si rifà alla prima occasione */
+{const f=trkRbUse;trkRbUse=function(P){if(P.rb&&!P.isAI&&P.rb.sk!==trkSuspKey())trkRbDrop(P);return f(P);};}
+
+/* ruote che salgono e scendono con la compressione delle molle (ruote 0-1 anteriori, pari a sinistra = z negativa del modello) */
+if(typeof trkVisual==='function'){const f=trkVisual;trkVisual=function(P,dt){f(P,dt);const B=P.rb,Vv=P.vis;
+  if(!B||!Vv||Vv.kind!=='vespera'||!Vv.wheels||TRK.replay.on)return;
+  for(const w of Vv.wheels){const k=(w.isFront?0:2)+(w.s>0?1:0);if(w.y0==null)w.y0=w.root.position.y;
+    const d=P.pit?0:clamp(B.x[k]-B.xs[k],-0.07,0.09);w.dy=(w.dy||0)+(d-(w.dy||0))*Math.min(1,dt*40);w.root.position.y=w.y0+w.dy;}};}
+
+/* vibrazione: il motore forte segue la velocità delle sospensioni (buche, cordoli, atterraggi), quello leggero l'uso delle gomme
+   vicino al limite (P.ws = scorrimento rispetto al picco), così il controller avverte prima che l'auto parta */
+if(typeof trkRumbleTick==='function'){const f=trkRumbleTick;trkRumbleTick=function(P){const B=P.rb,sp=Math.abs(P.car.vx);
+  if(!B||!B.xd||P.pit||sp<3||P.landT>0.3||P.air)return f(P);
+  let bump=0,u=0;for(let k=0;k<4;k++){bump+=Math.abs(B.xd[k]);if(P.ws)u=Math.max(u,P.ws[k]);}
+  const grass=P.surf==='erba'||P.surf==='ghiaia',kerb=P.surf==='cordolo';
+  const S=Math.max(clamp((bump-0.3)*0.45,0,0.75),grass?0.5*Math.min(1,sp/25):0);
+  const W=Math.max(clamp((u-0.8)*1.6,0,0.45),kerb?0.4*Math.min(1,sp/30):0,P.spin||(P.brk>0.9&&Math.abs(P.ar)>0.1)?0.35:0);
+  if(S>0.03||W>0.03)trkRumble(P,S,W,110);};}
+
+/* ---------- comandi nella scheda Assetto del Garage ---------- */
+function trkSuspUI(){
+  const box=document.getElementById('tSetup');if(!box||document.getElementById('suspGrp'))return;
+  const g=document.createElement('div');g.className='group';g.id='suspGrp';
+  const row=(id,lab,min,max,st)=>`<div style="margin-bottom:14px"><h2><label for="${id}">${lab}</label><output id="${id}Out"></output></h2><input type="range" id="${id}" min="${min}" max="${max}" step="${st}"></div>`;
+  g.innerHTML=`${row('suspKf','Molle anteriori',36,90,2)}${row('suspKr','Molle posteriori',40,100,2)}${row('suspAf','Barra antirollio anteriore',0,6,1)}${row('suspAr','Barra antirollio posteriore',0,6,1)}
+    <div class="toggles" style="margin-top:8px"><button class="tog" id="suspReset">Assetto di serie</button></div>
+    <p class="note" id="suspNote"></p>
+    <p class="note">Molle più rigide tengono l'auto più alta sotto il carico delle ali (meno effetto suolo ma più stabile) e la fanno saltare di più sui cordoli. Le barre antirollio funzionano con la scocca 3D: più barra davanti rende l'auto più sottosterzante, più barra dietro la fa girare di più.</p>`;
+  const first=box.querySelector('.group');first.after(g);
+  const map={suspKf:'kf',suspKr:'kr',suspAf:'af',suspAr:'ar'};
+  const show=()=>{const m=TRK.mass||MASS,fq=(k,wf)=>Math.sqrt(k*1000/(m*wf/2))/(2*Math.PI);
+    for(const id in map){const v=SUSP[map[id]],el=document.getElementById(id);el.value=v;
+      document.getElementById(id+'Out').textContent=id==='suspKf'?`${v} kN/m · ${fq(v,STATF).toFixed(1).replace('.',',')} Hz`:id==='suspKr'?`${v} kN/m · ${fq(v,1-STATF).toFixed(1).replace('.',',')} Hz`:['staccata','1','2','3','4','5','6'][v]+(v===SUSP_DEF[map[id]]?' (serie)':'');}
+    const bal=(SUSP.af*4000+SUSP.kf*1000*0.25)/(SUSP.af*4000+SUSP.ar*4000+(SUSP.kf+SUSP.kr)*1000*0.25);
+    document.getElementById('suspNote').textContent=`Rigidezza al rollio davanti: ${Math.round(bal*100)} % (di serie ${Math.round((SUSP_DEF.af*4000+SUSP_DEF.kf*250)/(SUSP_DEF.af*4000+SUSP_DEF.ar*4000+(SUSP_DEF.kf+SUSP_DEF.kr)*250)*100)} %). `+
+      (bal>0.62?'L\'auto tende ad allargare in curva.':bal<0.5?'Il retrotreno è vivace: attenzione in uscita dalle curve.':'Equilibrio neutro.');};
+  const changed=()=>{trkSuspSync();try{localStorage.setItem('vespera-susp',JSON.stringify(SUSP));}catch(e){}show();updateReadout();trkDirty();};
+  for(const id in map)document.getElementById(id).addEventListener('input',e=>{SUSP[map[id]]=+e.target.value;changed();});
+  document.getElementById('suspReset').onclick=()=>{Object.assign(SUSP,SUSP_DEF);changed();};
+  /* anche l'altezza da terra cambia il giro calcolato */
+  const ride=document.getElementById('ride');if(ride)ride.addEventListener('input',()=>trkDirty());
+  show();
+}
+if(typeof document!=='undefined')trkSuspUI();
+/* =========================================================
+   Interfaccia, seconda passata: anteprima grande del circuito nella schermata Gara veloce
+   (tracciato colorato per quota, numero di curve, lunghezza, dislivello, record personale, meteo e ora)
+   e riepilogo di fine gara (posizioni guadagnate, giro migliore contro il giro ideale, velocità massima,
+   danni, distacco di ogni giro dal migliore)
+   ========================================================= */
+/* ---------- anteprima del circuito ---------- */
+const RP={id:-1,el:null,cv:null};
+function trkRacePreview(){
+  const left=document.querySelector('#cs .cs-scr[data-s="race"] .cs-left');if(!left||RP.el)return;
+  const w=document.createElement('div');w.className='group cs-prev';
+  w.innerHTML=`<div class="cs-prev-k">Circuito</div><div class="cs-prev-n"></div><canvas width="640" height="300" role="img"></canvas><dl class="cs-prev-d"></dl>`;
+  left.prepend(w);RP.el=w;RP.cv=w.querySelector('canvas');
+  setInterval(trkRacePreviewUpd,500);trkRacePreviewUpd();
+}
+function trkRacePreviewUpd(){
+  if(!RP.el||RP.el.offsetParent===null)return;const id=TRK.trackId,d=TRK_DEFS[id]||TRK_DEFS[0],key=id+'|'+TRK.tod+'|'+TRK.weather+'|'+JSON.stringify(TRK.myBest||{}).length;
+  if(RP.id===key)return;RP.id=key;const I=trkDefInfo(d),cv=RP.cv;trkDrawPreview(cv,d);
+  RP.el.querySelector('.cs-prev-n').textContent=d.name||d.short;cv.setAttribute('aria-label',`Tracciato di ${d.name||d.short}`);
+  const pb=Object.entries(TRK.myBest||{}).filter(([k])=>k.startsWith(id+'|')).map(([,v])=>v.t).sort((a,b)=>a-b)[0];
+  const tod={day:'giorno',sunset:'tramonto',night:'notte',dawn:'alba'}[TRK.tod]||TRK.tod||'giorno',wx=(TRK_WX[TRK.weather]||{}).n||'';
+  RP.el.querySelector('.cs-prev-d').innerHTML=`<div><dt>Lunghezza</dt><dd>${(I.L/1000).toFixed(2).replace('.',',')} km</dd></div><div><dt>Curve</dt><dd>${(d.corners||[]).length}</dd></div>
+    <div><dt>Dislivello</dt><dd>${Math.round(I.dh)} m</dd></div><div><dt>Tuo record</dt><dd>${pb?fmtLap(pb):'—'}</dd></div><div class="w"><dt>Condizioni</dt><dd>${wx}${wx?', ':''}${tod}</dd></div>`;
+}
+if(typeof document!=='undefined'&&document.getElementById('cs'))trkRacePreview();
+
+/* ---------- dati della gara per il riepilogo ---------- */
+{const f=trkRaceSetup;trkRaceSetup=function(){f();for(const P of TRK.cars){P.rs={grid:P.pos||1,laps:[],vmax:0,dmg:0};}};}
+{const f=trkLap;trkLap=function(P,a,b){const L=P.lap,n0=L.n,last=L.last;f(P,a,b);
+  if(P.rs&&TRK.race.state!=='off'&&L.n!==n0&&L.last!=null&&L.last!==last)P.rs.laps.push({t:L.last,ok:L.lastValid!==false});};}
+{const f=trkFrame;trkFrame=function(dt){f(dt);if(!TRK.on||TRK.replay.on||TRK.race.state!=='run')return;
+  for(const P of TRK.cars){const R=P.rs;if(!R)continue;R.vmax=Math.max(R.vmax,P.kmh||0);const D=P.dmg;if(D)R.dmg=Math.max(R.dmg,D.fw||0,D.rw||0,...(D.s||[0]));}};}
+
+/* ---------- riepilogo di fine gara ---------- */
+{const f=trkRaceEnd;trkRaceEnd=function(){f();
+  const el=document.getElementById('thRace'),me=TRK.p[0],R=me&&me.rs;if(!el||!R||TRK.split)return;
+  const pos=me.pos||1,gain=R.grid-pos,best=me.lap.best,ideal=me.sim&&me.sim.lap;
+  const tiles=[['Posizione',`${R.grid}° → ${pos}°`,gain>0?`${gain} ${gain===1?'posizione guadagnata':'posizioni guadagnate'}`:gain<0?`${-gain} ${gain===-1?'posizione persa':'posizioni perse'}`:'stessa posizione'],
+    ['Giro migliore',best!=null?fmtLap(best):'—',best!=null&&ideal?`${best>=ideal?'+':'−'}${dec(Math.abs(best-ideal),2)} s dal giro ideale`:''],
+    ['Velocità massima',`${Math.round(R.vmax)} km/h`,''],
+    ['Danni',R.dmg>0.02?`${Math.round(R.dmg*100)} %`:'nessuno',me.stops?`${me.stops} ${me.stops===1?'sosta':'soste'} ai box`:'']];
+  const box=document.createElement('div');box.className='tr-me';
+  box.innerHTML=`<div class="tr-tiles">${tiles.map(([k,v,s])=>`<div><small>${k}</small><b>${v}</b>${s?`<span>${s}</span>`:''}</div>`).join('')}</div>`;
+  /* distacco di ogni giro dal giro migliore: barre che partono da zero (il giro migliore è il segno a zero) */
+  const L=R.laps;if(L.length>1){const b0=Math.min(...L.map(l=>l.t)),mx=Math.max(1,...L.map(l=>l.t-b0));
+    box.insertAdjacentHTML('beforeend',`<div class="tr-laps"><small>Distacco dal tuo giro migliore, giro per giro${L.some(l=>!l.ok)?' · a righe i giri non validi':''}</small><div class="tr-bars" role="list">${L.map((l,k)=>{const d=l.t-b0,h=d<0.005?0:Math.max(4,d/mx*80);
+      return `<div role="listitem" class="${d<0.005?'best':''}${l.ok?'':' inv'}" title="Giro ${k+1}: ${fmtLap(l.t)}${d<0.005?' (migliore)':` (+${dec(d,2)} s)`}${l.ok?'':', non valido'}"><i style="height:${h}%"></i><em>${d<0.005?'migliore':'+'+dec(d,1)}</em><u>${k+1}</u></div>`;}).join('')}</div></div>`);}
+  const tab=el.querySelector('.tr-tab');(tab||el.querySelector('dl')).after(box);};}
+/* =========================================================
+   Grafica: occlusione ambientale nello spazio dello schermo (SSAO) e antialiasing FXAA, dentro la post-produzione HDR.
+   La profondità arriva gratis: il render target multicampione della scena ha una DepthTexture (24 bit con stencil,
+   come il suo buffer) e three.js la copia con il resto quando risolve i campioni. L'occlusione si calcola a metà
+   risoluzione (stile SAO: campioni a spirale, normali ricostruite dalla profondità), si sfoca tenendo conto della
+   profondità e scurisce solo la luce della scena, prima del bagliore. FXAA lavora sull'immagine finale in sRGB e
+   ammorbidisce i bordi che il multicampionamento non tocca (riflessi, guard rail sottili, texture lontane).
+   Con lo schermo diviso in due l'occlusione resta spenta.
+   ========================================================= */
+const PPX={ao:true,aa:true,ok:false,w:0,h:0,a:null,b:null,ldr:null,inv:new THREE.Matrix4()};
+try{const s=JSON.parse(localStorage.getItem('vespera-gfx')||'null');if(s){PPX.ao=s.ao!==false;PPX.aa=s.aa!==false;}
+  else if(window.matchMedia&&matchMedia('(pointer:coarse)').matches)PPX.ao=false;}catch(e){}
+function ppxSave(){try{localStorage.setItem('vespera-gfx',JSON.stringify({ao:PPX.ao,aa:PPX.aa}));}catch(e){}}
+const PPX_RT={type:THREE.UnsignedByteType,format:THREE.RGBAFormat,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,generateMipmaps:false,depthBuffer:false};
+/* render target della scena con la profondità leggibile, e quelli dell'occlusione e dell'immagine finale */
+{const f=ppEnsure;ppEnsure=function(w,h){const was=PP.rt;f(w,h);if(PP.rt===was&&PPX.a)return;
+  if(PP.rt!==was){const dt=new THREE.DepthTexture(w,h);dt.format=THREE.DepthStencilFormat;dt.type=THREE.UnsignedInt248Type;PP.rt.depthTexture=dt;}
+  [PPX.a,PPX.b,PPX.ldr].forEach(t=>t&&t.dispose());PPX.w=Math.max(1,w>>1);PPX.h=Math.max(1,h>>1);
+  PPX.a=new THREE.WebGLRenderTarget(PPX.w,PPX.h,PPX_RT);PPX.b=new THREE.WebGLRenderTarget(PPX.w,PPX.h,PPX_RT);PPX.ldr=new THREE.WebGLRenderTarget(w,h,PPX_RT);};}
+const PPX_DEPTH=`uniform sampler2D tDepth;uniform mat4 uInv;
+  vec3 vpos(vec2 uv){float d=texture2D(tDepth,uv).x;vec4 p=uInv*vec4(uv*2.0-1.0,d*2.0-1.0,1.0);return p.xyz/p.w;}`;
+/* occlusione: 14 campioni su una spirale ruotata a caso per pixel, raggio di 1,4 m proiettato sullo schermo; si spegne oltre ~120 m */
+const ppAO=ppMat({tDepth:{value:null},uInv:{value:new THREE.Matrix4()},uRes:{value:new THREE.Vector2()},uPy:{value:1},uRad:{value:1.4}},
+  `${PPX_DEPTH}uniform vec2 uRes;uniform float uPy,uRad;varying vec2 vUv;
+  float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+  void main(){float d=texture2D(tDepth,vUv).x;if(d>=0.99999){gl_FragColor=vec4(1.0);return;}
+    vec3 P=vpos(vUv);vec2 px=1.0/uRes;
+    vec3 a=vpos(vUv+vec2(px.x,0.0)),b=vpos(vUv-vec2(px.x,0.0)),c=vpos(vUv+vec2(0.0,px.y)),e=vpos(vUv-vec2(0.0,px.y));
+    vec3 dx=abs(a.z-P.z)<abs(b.z-P.z)?a-P:P-b,dy=abs(c.z-P.z)<abs(e.z-P.z)?c-P:P-e;vec3 N=normalize(cross(dx,dy));
+    float z=-P.z,ss=min(uRad*uPy*0.5/z,0.09),r2=uRad*uRad,a0=hash(gl_FragCoord.xy)*6.2831853,occ=0.0;
+    for(int i=0;i<14;i++){float t=(float(i)+0.5)/14.0,an=a0+float(i)*2.3999632;vec2 o=vec2(cos(an),sin(an))*ss*t;
+      vec3 v=vpos(vUv+o)-P;float vv=dot(v,v),vn=dot(v,N);occ+=max(0.0,vn/sqrt(vv+1e-4)-0.05)*max(0.0,1.0-vv/r2);}
+    float ao=1.0-occ/14.0*3.6*(1.0-smoothstep(60.0,120.0,z));gl_FragColor=vec4(vec3(clamp(ao,0.0,1.0)),1.0);}`);
+/* sfocatura separabile che non attraversa i salti di profondità (il bordo di un'auto non sporca la strada dietro) */
+const ppAOBlur=ppMat({tSrc:{value:null},tDepth:{value:null},uInv:{value:new THREE.Matrix4()},uDir:{value:new THREE.Vector2()}},
+  `${PPX_DEPTH}uniform sampler2D tSrc;uniform vec2 uDir;varying vec2 vUv;
+  void main(){float z0=-vpos(vUv).z,s=0.0,w=0.0;
+    for(int i=-3;i<=3;i++){vec2 uv=vUv+uDir*float(i);float zi=-vpos(uv).z,k=exp(-abs(zi-z0)/(0.04*z0+0.05))*(1.0-abs(float(i))/4.0);s+=texture2D(tSrc,uv).r*k;w+=k;}
+    gl_FragColor=vec4(vec3(s/max(w,1e-4)),1.0);}`);
+/* FXAA nella versione semplice di NVIDIA: cerca la direzione del bordo dalla luminanza e media lungo quella */
+const ppFXAA=ppMat({tSrc:{value:null},uTexel:{value:new THREE.Vector2()}},
+  `uniform sampler2D tSrc;uniform vec2 uTexel;varying vec2 vUv;
+  float lum(vec3 c){return dot(c,vec3(0.299,0.587,0.114));}
+  void main(){vec3 cNW=texture2D(tSrc,vUv+vec2(-1.0,-1.0)*uTexel).rgb,cNE=texture2D(tSrc,vUv+vec2(1.0,-1.0)*uTexel).rgb,
+      cSW=texture2D(tSrc,vUv+vec2(-1.0,1.0)*uTexel).rgb,cSE=texture2D(tSrc,vUv+vec2(1.0,1.0)*uTexel).rgb,cM=texture2D(tSrc,vUv).rgb;
+    float lNW=lum(cNW),lNE=lum(cNE),lSW=lum(cSW),lSE=lum(cSE),lM=lum(cM);
+    float lMin=min(lM,min(min(lNW,lNE),min(lSW,lSE))),lMax=max(lM,max(max(lNW,lNE),max(lSW,lSE)));
+    if(lMax-lMin<max(0.0312,lMax*0.125)){gl_FragColor=vec4(cM,1.0);return;}
+    vec2 dir=vec2(-((lNW+lNE)-(lSW+lSE)),(lNW+lSW)-(lNE+lSE));
+    float red=max((lNW+lNE+lSW+lSE)*0.03125,0.0078125),rcp=1.0/(min(abs(dir.x),abs(dir.y))+red);
+    dir=clamp(dir*rcp,vec2(-8.0),vec2(8.0))*uTexel;
+    vec3 A=0.5*(texture2D(tSrc,vUv+dir*(1.0/3.0-0.5)).rgb+texture2D(tSrc,vUv+dir*(2.0/3.0-0.5)).rgb);
+    vec3 B=A*0.5+0.25*(texture2D(tSrc,vUv-dir*0.5).rgb+texture2D(tSrc,vUv+dir*0.5).rgb);
+    float lB=lum(B);gl_FragColor=vec4((lB<lMin||lB>lMax)?A:B,1.0);}`);
+/* la composizione finale moltiplica la luce della scena per l'occlusione, prima del bagliore */
+ppComp.uniforms.tAO={value:null};ppComp.uniforms.uAO={value:0};
+ppComp.fragmentShader=ppComp.fragmentShader.replace('uniform float uExp,','uniform sampler2D tAO;uniform float uAO;uniform float uExp,')
+  .replace('vec3 c=texture2D(tScene,uv).rgb;','vec3 c=texture2D(tScene,uv).rgb;if(uAO>0.0)c*=mix(1.0,texture2D(tAO,vUv).r,uAO);');
+ppComp.needsUpdate=true;
+{const f=ppFinal;ppFinal=function(views,W,H){
+  const ao=PPX.ao&&views.length===1&&PP.rt&&PP.rt.depthTexture&&PPX.a,cam=views[0].cam;ppComp.uniforms.uAO.value=0;
+  if(ao){PPX.inv.copy(cam.projectionMatrix).invert();const dt=PP.rt.depthTexture;
+    const U=ppAO.uniforms;U.tDepth.value=dt;U.uInv.value.copy(PPX.inv);U.uRes.value.set(PPX.w,PPX.h);U.uPy.value=cam.projectionMatrix.elements[5];ppPass(ppAO,PPX.a);
+    const Bu=ppAOBlur.uniforms;Bu.tDepth.value=dt;Bu.uInv.value.copy(PPX.inv);
+    Bu.tSrc.value=PPX.a.texture;Bu.uDir.value.set(1/PPX.w,0);ppPass(ppAOBlur,PPX.b);Bu.tSrc.value=PPX.b.texture;Bu.uDir.value.set(0,1/PPX.h);ppPass(ppAOBlur,PPX.a);
+    ppComp.uniforms.tAO.value=PPX.a.texture;ppComp.uniforms.uAO.value=TRK.tod==='night'?0.7:0.9;}
+  if(!PPX.aa||!PPX.ldr)return f(views,W,H);
+  renderer.setScissorTest(false);PP.quad.material=ppComp;renderer.setRenderTarget(PPX.ldr);renderer.render(PP.scene,PP.cam);
+  ppFXAA.uniforms.tSrc.value=PPX.ldr.texture;ppFXAA.uniforms.uTexel.value.set(1/PPX.ldr.width,1/PPX.ldr.height);
+  renderer.setRenderTarget(null);renderer.setViewport(0,0,W,H);PP.quad.material=ppFXAA;renderer.render(PP.scene,PP.cam);};}
+/* comandi in Impostazioni → Grafica */
+{const box=document.getElementById('trkFxShadow');if(box&&box.parentNode){
+  for(const [id,txt,k] of [['trkFxAO','Occlusione ambientale (SSAO): angoli e contatti più scuri','ao'],['trkFxAA','Bordi più morbidi (FXAA)','aa']]){
+    const b=document.createElement('button');b.className='tog';b.id=id;b.textContent=txt;box.parentNode.appendChild(b);
+    toggle(id,v=>{PPX[k]=v;ppxSave();});setPressed(id,PPX[k]);}}}
 
 /* viste */
 let camTween=null,inside=false;

@@ -20,12 +20,14 @@ const TRK_DEFS=[
   corners:['Curva del Brenta','Tornante Basso','Tornante Alto','Cima','Curvone della Discesa','Esse delle Malghe','Curva del Bosco','Ultima'],
   bridge:[-300,-150,600],tower:[-800,1150]},
  {id:'porto',name:'Circuito Cittadino di Porto Vespera',short:'Porto',banner:'GRAN PREMIO DI PORTO VESPERA',autumn:false,urban:true,
-  /* Porto Vespera: un cittadino in piano fra i palazzi, tutto curve a 90° fra muri di cemento, il lungomare con la chicane del mercato
-     e il tornante del Duomo; niente vie di fuga, solo qualche strada di scampo all'esterno delle curve lente */
-  pts:[[-400,0],[200,0],[560,0],[614,0],[639,11],[650,36],[650,168],[640,190],[618,200],[500,200],[479,209],[470,230],[470,300],[479,321],[500,330],[668,330],[690,340],[700,362],[700,522],[689,549],[662,560],[440,560],[415,578],[365,578],[340,560],[130,560],[109,551],[100,530],[100,450],[91,429],[70,420],[-132,420],[-145,425],[-150,438],[-150,588],[-160,610],[-182,620],[-394,620],[-425,611],[-448,589],[-525,455],[-539,418],[-545,380],[-545,210],[-508,82]],
-  hills:[[0,500,3,220],[-300,300,2,200]],
-  corners:['Curva del Porto','Piazza Grande','Via Roma','Corso Italia','Curva del Faro','Lungomare','Chicane del Mercato','Curva della Stazione','Viale dei Tigli','Tornante del Duomo','Curva del Teatro','Piazza Garibaldi','Curvone dei Bastioni'],
-  bridge:[180,205,550],tower:[-800,1150]}];
+  /* Porto Vespera, sul modello dei grandi cittadini di mare: dopo il via si sale fra i palazzi fino alla piazza del Casinò (36 m),
+     si scende al tornante dell'Albergo (22 km/h), si torna al mare e si passa la galleria in curva, la più veloce del giro;
+     all'uscita la chicane del porto, poi le esse della piscina e la Pescheria prima del curvone che riporta al traguardo */
+  pts:[[-400,0],[200,0],[560,0],[620,0],[636,6],[645,19],[658,67],[662,110],[656,153],[653,162],[647,200],[651,238],[655,251],[654,282],[639,309],[609,337],[588,349],[564,353],[519,351],[506,353],[494,359],[476,376],[464,381],[451,382],[419,373],[405,372],[391,372],[328,382],[312,388],[298,399],[222,485],[218,500],[231,508],[340,520],[423,553],[434,563],[436,578],[424,630],[416,646],[401,657],[150,745],[-100,725],[-150,707],[-185,719],[-210,701],[-235,701],[-258,717],[-325,709],[-357,699],[-385,680],[-420,645],[-401,604],[-433,563],[-414,522],[-468,459],[-473,445],[-468,431],[-440,398],[-520,346],[-537,326],[-545,300],[-545,210],[-508,82]],
+  hills:[[540,330,30,210],[300,440,14,170],[-450,520,5,150]],
+  corners:['Curva di Santa Lucia','Salita del Belvedere','Piazza del Casinò',"Tornante dell'Albergo",'Curva del Molo','Chicane del Porto','Esse della Piscina','Curva della Pescheria','Curvone dei Bastioni'],
+  /* niente ponte: sul lungomare c'è la galleria (track-b17); il mare è oltre Y = 775 */
+  bridge:[1e9,1e9,0],tower:[-800,1150],sea:775,tunnel:[-80,390,690]}];
 const TRK_PTS=[[-400,0],[200,0],[560,0],[700,10],[765,65],[725,128],[640,132],[470,150],[350,195],[290,290],[300,410],[370,540],[500,625],[625,700],[650,790],[575,862],[330,884],[205,885],[168,884],[146,876],[126,864],[104,860],[82,869],[58,881],[10,884],[-150,882],[-330,846],[-430,750],[-468,632],[-436,556],[-472,484],[-528,372],[-545,220],[-510,85]];
 const TRK_W=12;        // larghezza della carreggiata
 /* colline: [X, Y, altezza, raggio] — salita dopo il tornante fino al Curvone, dosso sul rettilineo opposto prima della chicane,

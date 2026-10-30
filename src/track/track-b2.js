@@ -440,8 +440,9 @@ function trkAIDrive(P,dt){
   if(P.errT>0&&P.errKind==='spin'){P.thr=0.15;P.brk=0;}
   /* all'inizio di una staccata decisa può sbagliare: più spesso se irruento, se attacca o sul bagnato */
   if(aCmd<-4&&P.errCool<=0&&P.errT<=0&&TRK.race.state!=='count'&&c.vx>22){/* fra i muri di un cittadino i piloti rischiano meno: errori più rari e staccate lunghe più corte */
-    const pr=ch.err*0.07*(1+2*TRK.wet*(1.4-ch.wet))*(attack?1.6:1)*(TRKDEF.urban?0.35:1);P.errCool=4;
-    if(Math.random()<pr){const spin=TRK.wet>0.35?Math.random()<0.55:Math.random()<0.18;P.errKind=spin?'spin':'lungo';P.errT=spin?0.9:1.7;P.errCool=28+Math.random()*20;P.errs++;
+    const pr=ch.err*0.07*(1+1.2*TRK.wet*(1.4-ch.wet))*(attack?1.6:1)*(TRKDEF.urban?0.35:1);P.errCool=4;
+    if(Math.random()<pr){/* sul bagnato si sbaglia più spesso, ma di solito andando lunghi: i testacoda in mezzo al gruppo fanno carambole */
+      const spin=TRK.wet>0.35?Math.random()<0.35:Math.random()<0.18;P.errKind=spin?'spin':'lungo';P.errT=spin?0.9:1.7;P.errCool=28+Math.random()*20;P.errs++;
       if(spin){c.r+=(Math.random()<0.5?-1:1)*(0.9+Math.random()*0.5);}
       trkRadio(P,spin?`#${P.num} in testacoda${trkCornerAhead(bi)}!`:`#${P.num} lungo in staccata${trkCornerAhead(bi)}`);}}
   /* incastrato o finito lontano dalla pista: si rimette in pista da solo */

@@ -282,9 +282,9 @@ function trkBuildWorld(){
    const sun=new THREE.Mesh(new THREE.SphereGeometry(4,16,8),new THREE.MeshBasicMaterial({color:new THREE.Color(0xfff2d8).multiplyScalar(5)}));sun.position.set(-20,34,-15);es.add(sun);
    trkEnv=pmrem.fromScene(es,0.02).texture;}
   /* prato con le strisce del tosaerba */
-  const grassTex=TRKDEF.urban?trkConcreteTex().map:trkGrassTex().map;
+  const grassTex=TRKDEF.urban?(trkPhotoTex('ph-pavement-color',true)||trkConcreteTex().map):trkGrassTex().map;
   /* prato a riquadri e spinto indietro nella profondità: così non litiga mai con l'asfalto che gli sta 5 cm sopra */
-  const grassMat=trkNightPatch(new THREE.MeshLambertMaterial({map:grassTex,vertexColors:true,polygonOffset:true,polygonOffsetFactor:4,polygonOffsetUnits:8}));TRK.grassMat=grassMat;if(TRKDEF.urban)grassMat.color.setHex(0x46494d);grassMat.userData.wuv=6;grassMat.userData.mac=0.12;
+  const grassMat=trkNightPatch(new THREE.MeshLambertMaterial({map:grassTex,vertexColors:true,polygonOffset:true,polygonOffsetFactor:4,polygonOffsetUnits:8}));TRK.grassMat=grassMat;if(TRKDEF.urban)grassMat.color.setHex(TRK_PHOTO['ph-pavement-color']?0x9a9a9a:0x46494d);grassMat.userData.wuv=6;grassMat.userData.mac=0.12;
   /* terreno con le colline attorno alla pista (celle da 12 m) e una pianura piatta oltre */
   {const g=new THREE.PlaneGeometry(3400,3400,280,280);g.rotateX(-Math.PI/2);const p=g.attributes.position,uv=g.attributes.uv;
    for(let k=0;k<p.count;k++){const X=p.getX(k)+110,Y=-(p.getZ(k)-430);p.setXYZ(k,X,trkGroundH(X,Y),-Y);uv.setXY(k,uv.getX(k)*3400/9000,uv.getY(k)*3400/9000);}
