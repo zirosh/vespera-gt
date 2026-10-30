@@ -79,21 +79,21 @@ function trkPadFrame(dt){
 }
 /* fuori dalla pista: Menu sul pad scende in pista */
 /* fuori dalla pista il pad comanda anche il garage: croce o levetta per spostarsi fra i comandi visibili, A conferma,
-   croce a sinistra e a destra cambia i cursori, LB e RB cambiano scheda, Menu scende in pista */
+   croce a sinistra e a destra cambia i cursori, LB e RB cambiano scheda, B torna indietro, Menu scende in pista */
 function trkPadIdle(){const L=trkPadList(),p=L[0];document.documentElement.classList.toggle('pad',!!p);if(!p)return;
   const was=i=>!!PADS.idlePrev[i],hit=i=>padOn(p,i)&&!was(i),now=performance.now();
   if(hit(PAD_B.MENU)&&busy.hidden)trkStart();
   else if(busy.hidden){
     if(hit(PAD_B.LB)||hit(PAD_B.RB)){const tb=[...document.querySelectorAll('[role="tab"]')].filter(b=>b.offsetParent!==null),i=tb.findIndex(b=>b.getAttribute('aria-selected')==='true');
       if(tb.length){const b=tb[(i+(hit(PAD_B.RB)?1:tb.length-1))%tb.length];b.click();b.focus({preventScroll:true});}}
-    const els=[...document.querySelectorAll('button,input,select,[role="tab"]')].filter(e=>e.offsetParent!==null&&!e.disabled&&e.closest('.panel,.gm-bar,.tabs,[role="dialog"]'));
+    const els=[...document.querySelectorAll('button,input,select,[role="tab"]')].filter(e=>e.offsetParent!==null&&!e.disabled&&e.closest('#cs,.panel,.gm-bar,.tabs,[role="dialog"]'));
     let i=els.indexOf(document.activeElement);const y=p.axes[1]||0,x=p.axes[0]||0;let mv=0,adj=0;
     if(hit(PAD_B.DOWN))mv=1;else if(hit(PAD_B.UP))mv=-1;else if(now>PADS.menuT&&Math.abs(y)>0.6){mv=y>0?1:-1;PADS.menuT=now+220;}
     if(hit(PAD_B.RIGHT))adj=1;else if(hit(PAD_B.LEFT))adj=-1;else if(now>PADS.menuT&&Math.abs(x)>0.6){adj=x>0?1:-1;PADS.menuT=now+140;}
     if(els.length&&(mv||(adj&&i<0))){i=i<0?0:(i+(mv||adj)+els.length)%els.length;els[i].focus({preventScroll:false});els[i].scrollIntoView({block:'nearest'});}
     else if(adj&&i>=0){const e=els[i];if(e.type==='range'){adj>0?e.stepUp():e.stepDown();e.dispatchEvent(new Event('input',{bubbles:true}));}else{const j=(i+adj+els.length)%els.length;els[j].focus({preventScroll:false});}}
     if(hit(PAD_B.A)&&i>=0&&els[i].type!=='range')els[i].click();
-    if(hit(PAD_B.B)&&document.activeElement)document.activeElement.blur();}
+    if(hit(PAD_B.B)&&!csBack()&&document.activeElement)document.activeElement.blur();}
   for(let i=0;i<p.buttons.length;i++)PADS.idlePrev[i]=padOn(p,i);}
 /* navigazione nei riquadri con bottoni: croce o levetta per spostarsi, A conferma, B torna indietro */
 function trkMenuPad(k,p,box){
