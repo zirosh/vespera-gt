@@ -159,8 +159,10 @@ function trkRbRecover(P){
 function trkRbHit(P){
   const B=P.rb,c=P.car,hx=B.hit[0],hz=B.hit[2],dv=Math.hypot(hx,hz);B.hit.fill(0);if(dv<1.5)return;
   const cp=Math.cos(c.psi),sp=Math.sin(c.psi),bx=-(hx*cp-hz*sp),by=-(-hx*sp-hz*cp),l=Math.hypot(bx,by)||1;
-  if(typeof trkDmgHit==='function')trkDmgHit(P,dv,bx/l,by/l);
-  if(dv>2&&P.collT<=0){const car=TRK.cars.some(Q=>Q!==P&&Math.hypot(Q.car.X-c.X,Q.car.Y-c.Y)<6);trkToast(P,car?'Contatto!':'Contatto con il guard rail',1.4);trkThump(P,Math.min(1,dv/10));P.collT=1.2;if(!car&&P.lap)P.lap.valid=false;}
+  /* contro un'altra auto (carrozzerie che cedono) il danno è minore che contro un muro di cemento */
+  const car=TRK.cars.some(Q=>Q!==P&&Math.hypot(Q.car.X-c.X,Q.car.Y-c.Y)<6);
+  if(typeof trkDmgHit==='function')trkDmgHit(P,car?dv*0.7:dv,bx/l,by/l);
+  if(dv>2&&P.collT<=0){trkToast(P,car?'Contatto!':'Contatto con il guard rail',1.4);trkThump(P,Math.min(1,dv/10));P.collT=1.2;if(!car&&P.lap)P.lap.valid=false;}
 }
 
 /* ---------- agganci ---------- */

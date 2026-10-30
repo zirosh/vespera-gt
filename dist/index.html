@@ -5259,8 +5259,9 @@ function trkAIDrive(P,dt){
   if(P.errT>0&&P.errKind==='spin'){P.thr=0.15;P.brk=0;}
   /* all'inizio di una staccata decisa può sbagliare: più spesso se irruento, se attacca o sul bagnato */
   if(aCmd<-4&&P.errCool<=0&&P.errT<=0&&TRK.race.state!=='count'&&c.vx>22){/* fra i muri di un cittadino i piloti rischiano meno: errori più rari e staccate lunghe più corte */
-    const pr=ch.err*0.07*(1+2*TRK.wet*(1.4-ch.wet))*(attack?1.6:1)*(TRKDEF.urban?0.35:1);P.errCool=4;
-    if(Math.random()<pr){const spin=TRK.wet>0.35?Math.random()<0.55:Math.random()<0.18;P.errKind=spin?'spin':'lungo';P.errT=spin?0.9:1.7;P.errCool=28+Math.random()*20;P.errs++;
+    const pr=ch.err*0.07*(1+1.2*TRK.wet*(1.4-ch.wet))*(attack?1.6:1)*(TRKDEF.urban?0.35:1);P.errCool=4;
+    if(Math.random()<pr){/* sul bagnato si sbaglia più spesso, ma di solito andando lunghi: i testacoda in mezzo al gruppo fanno carambole */
+      const spin=TRK.wet>0.35?Math.random()<0.35:Math.random()<0.18;P.errKind=spin?'spin':'lungo';P.errT=spin?0.9:1.7;P.errCool=28+Math.random()*20;P.errs++;
       if(spin){c.r+=(Math.random()<0.5?-1:1)*(0.9+Math.random()*0.5);}
       trkRadio(P,spin?`#${P.num} in testacoda${trkCornerAhead(bi)}!`:`#${P.num} lungo in staccata${trkCornerAhead(bi)}`);}}
   /* incastrato o finito lontano dalla pista: si rimette in pista da solo */
@@ -7365,8 +7366,10 @@ function trkRbRecover(P){
 function trkRbHit(P){
   const B=P.rb,c=P.car,hx=B.hit[0],hz=B.hit[2],dv=Math.hypot(hx,hz);B.hit.fill(0);if(dv<1.5)return;
   const cp=Math.cos(c.psi),sp=Math.sin(c.psi),bx=-(hx*cp-hz*sp),by=-(-hx*sp-hz*cp),l=Math.hypot(bx,by)||1;
-  if(typeof trkDmgHit==='function')trkDmgHit(P,dv,bx/l,by/l);
-  if(dv>2&&P.collT<=0){const car=TRK.cars.some(Q=>Q!==P&&Math.hypot(Q.car.X-c.X,Q.car.Y-c.Y)<6);trkToast(P,car?'Contatto!':'Contatto con il guard rail',1.4);trkThump(P,Math.min(1,dv/10));P.collT=1.2;if(!car&&P.lap)P.lap.valid=false;}
+  /* contro un'altra auto (carrozzerie che cedono) il danno è minore che contro un muro di cemento */
+  const car=TRK.cars.some(Q=>Q!==P&&Math.hypot(Q.car.X-c.X,Q.car.Y-c.Y)<6);
+  if(typeof trkDmgHit==='function')trkDmgHit(P,car?dv*0.7:dv,bx/l,by/l);
+  if(dv>2&&P.collT<=0){trkToast(P,car?'Contatto!':'Contatto con il guard rail',1.4);trkThump(P,Math.min(1,dv/10));P.collT=1.2;if(!car&&P.lap)P.lap.valid=false;}
 }
 
 /* ---------- agganci ---------- */
