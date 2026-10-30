@@ -2,7 +2,8 @@
 
 Coupé costruita interamente in codice (three.js) con configuratore, laboratorio di forma, galleria del vento
 con CFD sulla scheda video e un gioco di guida: tre circuiti (Prealpi, Montello, Grappa), fisica a quattro ruote,
-fino a otto auto con piloti del computer, meteo variabile, box, controller Xbox, schermo diviso, campionato con officina.
+fino a otto auto con piloti del computer, meteo variabile, box, danni (ali e sospensioni, riparazione ai box), traiettoria consigliata,
+texture fotografiche CC0, controller Xbox, schermo diviso, campionato con officina.
 
 ## Provarla
 Apri `dist/index.html` in un browser (serve la connessione per three.js e i font), oppure:

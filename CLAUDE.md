@@ -27,11 +27,15 @@ src/track/track-b8.js  interfaccia da videogioco: contagiri, garage con prestazi
 src/track/track-b9.js  campionato «Coppa Vespera» (punti, crediti, officina, salvataggio)
 src/track/track-b10.js freni che si scaldano, sporco sulle carrozzerie, commissari e bandiere gialle, pubblico, elicottero TV
 src/track/track-b11.js ventola aspirante (fan car)
+src/track/track-b12.js traiettoria consigliata colorata (verde gas, giallo alza, rosso frena) sul profilo lapSim della tua auto
+src/track/track-b13.js danni: ali e sospensioni piegate dagli urti, convergenza storta, meno carico, riparazione ai box
+src/track/track-b14.js texture fotografiche CC0 (ghiaia, prato, inerti dell'asfalto) incorporate da src/assets
+src/assets/            immagini JPG CC0 di ambientCG (vedi LEGGIMI.md), messe in pagina come data URI da build.py
 build.py               incolla i file in base.html e scrive dist/index.html
 tools/                 simulazioni e prove (vedi sotto)
 ```
 I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/* viste */`, nell'ordine
-`track-core, track-a, b1 … b11`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
+`track-core, track-a, b1 … b14`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
 
 ## Comandi
 - Build: `python3 build.py` → `dist/index.html` (va rifatta dopo ogni modifica in `src/`).
@@ -40,12 +44,17 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
   `node tools/racesim.js <auto> <meteo 0-3> <giri> [passo]` — con `TRACK=0|1|2` per scegliere il circuito.
   Controllare: `nan false`, `reset 0`, tempi plausibili (Prealpi ~112-120 s al passo 0.965).
 - Prova di fisica (0-100, frenate, sterzate, con e senza aiuti): `node tools/phys-t.js`
+- Ali vere della Vespera: `tools/aero-presets.json` (carichi per ogni preset, esportati dal configuratore; vanno riesportati se cambia il modello aerodinamico).
+  `node tools/stab-t.js` (sterzate e staccate a 280 km/h, deriva massima), `node tools/handling-t.js [passo] [giri]` (giro su tutti i circuiti
+  con un pilota «da tastiera»; `KBD=0` sterzo proporzionale, `ASSIST=0` senza aiuti), `node tools/dmg-t.js` (urti, tiro laterale, sosta di riparazione).
+  Il banco comune è `tools/harness.js`. `racesim.js` include i danni (`DMG=0` per spegnerli) e stampa danni massimi e finali.
 - Dati dei circuiti (lunghezza, curve, dislivello): `node tools/t2check.js`; progetto di un nuovo tracciato: `tools/t3design.js`.
 - Prove nel browser (Playwright + Chromium software):
   `python3 tools/mk_test.py` (crea `dist/_test.html` con un finto `window.claude` e agganci `__TRK()`, `__STEP(n)`, `__RENDER()`, `__CH()`),
   poi `python3 -m http.server 8766 --directory dist` in background e
   `python3 tools/shot.py 1280 720 "js…" "~ms" "@cattura.png" "?espressione"`.
   Le catture vanno guardate: molti problemi sono solo visivi.
+  Se la rete blocca i CDN: `npm i three@0.128.0` in una cartella e `PW_THREE=<cartella>/node_modules`; `PW_CHROMIUM=<chromium>` per il browser preinstallato.
 
 ## Cose da sapere (errori già fatti)
 - **Agganci**: le estensioni nuove avvolgono le funzioni esistenti (`{const f=trkStop;trkStop=function(){f();…};}`) invece di modificarle;
@@ -63,4 +72,8 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
 - **Dati condivisi**: classifica (`board/<uid>`) e campionato (`data/users/<uid>/champ`) usano la capacità `db` dell'artifact di claude.ai.
   Fuori da claude.ai `window.claude` non esiste: la classifica si spegne e il campionato si salva solo in localStorage.
   Non rimuovere i ripieghi.
+- **Aerodinamica in pista**: `equilibrium()` (base.html) usa i tamponi di fine corsa come `springForce` (oltre 7 cm la molla è 13 volte più rigida).
+  Senza, l'anteriore scendeva senza limite, lo splitter andava in effetto suolo e ad alta velocità il carico si spostava davanti (sovrasterzo violento).
+- **Danni**: agganci dentro `trkPhysics` (`P.toe`, `P.toeR`, `P.wgk`) e aerodinamica avvolta per auto (`trkDmgAero`); i piloti del computer
+  seguono il profilo ricalcolato con l'auto danneggiata e vanno ai box se i danni superano il 40 %.
 - Prestazioni: la scena con 8 auto fa ~1200 draw call; aggiungere oggetti uniti o istanziati, non mesh sciolte.

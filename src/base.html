@@ -1572,9 +1572,11 @@ function aeroModel(cf,cr){
 const C0F=MASS*G*STATF/KF,C0R=MASS*G*(1-STATF)/KR;
 /* equilibrio statico: le molle si comprimono col carico, l'altezza cambia la deportanza, si ripete fino a convergenza.
    Se un asse si scarica del tutto, la molla arriva a fine corsa e le ruote si staccano. */
+/* oltre 7 cm di compressione la molla arriva sui tamponi di fine corsa, tredici volte più rigidi (come in springForce) */
+function bumpDefl(x){return x<=0.07?x:0.07+(x-0.07)/13;}
 function equilibrium(kmh){
   const v=kmh/3.6,q=0.5*1.225*v*v;let sf=0,sr=0,m=null;
-  for(let i=0;i<10;i++){m=aeroModel(SETUP.ride-sf,SETUP.ride-sr);sf=0.5*sf+0.5*Math.max(-C0F,-q*m.front/KF);sr=0.5*sr+0.5*Math.max(-C0R,-q*m.rear/KR);}
+  for(let i=0;i<10;i++){m=aeroModel(SETUP.ride-sf,SETUP.ride-sr);sf=0.5*sf+0.5*Math.max(-C0F,bumpDefl(-q*m.front/KF));sr=0.5*sr+0.5*Math.max(-C0R,bumpDefl(-q*m.rear/KR));}
   const Nf=MASS*G*STATF-q*m.front,Nr=MASS*G*(1-STATF)-q*m.rear;
   return {m,q,v,sf,sr,cf:SETUP.ride-sf,cr:SETUP.ride-sr,Nf,Nr};
 }

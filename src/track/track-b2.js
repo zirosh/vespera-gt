@@ -238,9 +238,12 @@ function trkPhysics(P,h){
   P.lastG=L.Gf+L.Gr;
   let thr=P.thr,brk=P.brk;
   let rev=false;if(brk>0.5&&thr<0.05&&c.vx<0.6){P.revT+=h;if(P.revT>0.45)rev=true;}else if(c.vx>0.5||thr>0.05)P.revT=0;
-  const aLim=Math.max(1,(L.Gf+L.Gr)/m),dmax=assist?Math.min(0.52,V.lwb*aLim/Math.max(c.vx*c.vx,1)+TIRE_PEAK*1.35):0.52;
+  /* angolo massimo delle ruote: con gli aiuti quello che porta al limite di aderenza; senza aiuti lo sterzo ha un rapporto che cresce con la velocità
+     (come uno sterzo progressivo), così a tutto tasto in autostrada non si arriva a 30° di ruota ma resta margine per controsterzare */
+  const aLim=Math.max(1,(L.Gf+L.Gr)/m),v2=Math.max(c.vx*c.vx,1),dmax=Math.min(0.52,assist?V.lwb*aLim/v2+TIRE_PEAK*1.35:V.lwb*aLim*1.6/v2+TIRE_PEAK*1.7);
   c.delta+=clamp(P.steerIn*dmax-c.delta,-8.8*h,8.8*h);
-  const d=c.delta;
+  /* convergenza storta da una sospensione piegata (danni): le ruote anteriori puntano un po' da una parte anche con lo sterzo dritto */
+  const d=c.delta+(P.toe||0),dR=P.toeR||0;
   /* carichi sulle quattro ruote: assi da vehLoads, laterale ripartito con la rigidezza al rollio (un po' di più davanti) */
   const lamF=V.wf+0.03,dLat=m*c.ay*V.h/V.track,cp=Math.cos(c.psi),sp2=Math.sin(c.psi);
   P.wdist=(P.wdist||0)+Math.abs(c.vx)*h;if(!P.w)P.w=[c.vx,c.vx,c.vx,c.vx];if(!P.wa)P.wa=[0,0,0,0];if(!P.wsf)P.wsf=['asfalto','asfalto','asfalto','asfalto'];if(!P.absw)P.absw=[1,1,1,1];
@@ -249,13 +252,15 @@ function trkPhysics(P,h){
     const xw=fr?a:-b,yw=left?tw:-tw,Xw=c.X+xw*cp-yw*sp2,Yw=c.Y+xw*sp2+yw*cp,dw=(Xw-T.X[i])*T.nx[i]+(Yw-T.Y[i])*T.ny[i];
     const sf=trkSurface(i,dw),S=TRK_SURF[sf];P.wsf[k]=sf;_wD[k]=dw;
     if(sf==='cordolo')Fz*=1+0.16*Math.sin(P.wdist*6.3+k*1.7);else if(sf!=='asfalto')Fz*=1+0.1*Math.sin(P.wdist*9.1+k*2.3)*Math.min(1,Math.abs(c.vx)/10);
-    _wF[k]=P.air?0:Fz;_wMu[k]=V.mu*S.mu*wmu*(fr?mf:mr*TIRE.rear);_wCr[k]=S.crr;_wG[k]=trkWheelGrip(_wMu[k],_wF[k]);}
+    _wF[k]=P.air?0:Fz;_wMu[k]=V.mu*S.mu*wmu*(fr?mf:mr*TIRE.rear)*(P.wgk?P.wgk[k]:1);_wCr[k]=S.crr;_wG[k]=trkWheelGrip(_wMu[k],_wF[k]);}
   /* velocità di ogni ruota nel suo piano (le anteriori sterzano, con un po' di Ackermann) */
-  const vxs=Math.max(Math.abs(c.vx),0.5),sgn=c.vx>=0?1:-1,ack=0.07*Math.sign(d);
-  for(let k=0;k<4;k++){const fr=k<2,left=k%2===0,xw=fr?a:-b,yw=left?tw:-tw,dk=fr?d*(1+(left?ack:-ack)):0;
+  /* sotto 1,5 m/s l'auto si muove in modo cinematico (vedi sotto) e le derive delle gomme non sono vere: con lo sterzo tutto girato
+     consumerebbero l'aderenza e l'auto non riuscirebbe a partire, specie in salita; fino a 4,5 m/s si passa gradualmente alle derive vere */
+  const vxs=Math.max(Math.abs(c.vx),0.5),sgn=c.vx>=0?1:-1,ack=0.07*Math.sign(d),kbT=c.vx>0?clamp((c.vx-1.5)/3,0,1):0;
+  for(let k=0;k<4;k++){const fr=k<2,left=k%2===0,xw=fr?a:-b,yw=left?tw:-tw,dk=fr?d*(1+(left?ack:-ack)):dR;
     const vx=c.vx-c.r*yw,vy=c.vy+c.r*xw,cd=Math.cos(dk),sd=Math.sin(dk),vl=vx*cd+vy*sd,vt=-vx*sd+vy*cd;_wVl[k]=vl;
     const a0=Math.atan2(vt,Math.max(Math.abs(vl),0.5)),sig=fr?0.5:0.6;
-    P.wa[k]+=(a0-P.wa[k])*Math.min(1,h*Math.max(Math.abs(vl),2)/sig);_wTa[k]=Math.tan(clamp(P.wa[k],-1.3,1.3));}
+    P.wa[k]+=(a0-P.wa[k])*Math.min(1,h*Math.max(Math.abs(vl),2)/sig);_wTa[k]=Math.tan(clamp(P.wa[k],-1.3,1.3))*kbT;}
   /* motore, frizione e cambio */
   const GR=trkGearing(V);if(P.gear==null||P.gear===0)P.gear=1;if(P.shiftT==null){P.tcR=1;P.shiftT=0;P.rpm=1000;}
   const urA=(P.w[2]+P.w[3])/2;let Fd=0;
@@ -289,7 +294,7 @@ function trkPhysics(P,h){
   if(Math.abs(c.vx)<0.3&&brk>0&&!rev){P.w.fill(0);c.vx*=Math.max(0,1-h*20);}
   /* forze delle gomme nel piano della ruota, poi nel telaio dell'auto */
   let Fx=0,Fy=0,Mz=0,Pf=0,Pr=0,spin=false,lock=false,afS=0,arS=0;
-  for(let k=0;k<4;k++){const fr=k<2,left=k%2===0,xw=fr?a:-b,yw=left?tw:-tw,dk=fr?d*(1+(left?ack:-ack)):0,vl=_wVl[k],kk=(P.w[k]-vl)/vref(k);
+  for(let k=0;k<4;k++){const fr=k<2,left=k%2===0,xw=fr?a:-b,yw=left?tw:-tw,dk=fr?d*(1+(left?ack:-ack)):dR,vl=_wVl[k],kk=(P.w[k]-vl)/vref(k);
     trkTireCS(_wG[k]*capF,kk,_wTa[k],fr?APK_F:APK_R,_tf);const fx=_tf[0],fy=_tf[1],cd=Math.cos(dk),sd=Math.sin(dk);
     if(!P.ws)P.ws=[0,0,0,0];P.ws[k]=P.air?0:Math.hypot(kk/KX_PEAK,_wTa[k]/(fr?APK_F:APK_R));
     const bx=fx*cd-fy*sd,by=fx*sd+fy*cd;Fx+=bx;Fy+=by;Mz+=xw*by-yw*bx;_wFx[k]=fx;_wFy[k]=fy;
