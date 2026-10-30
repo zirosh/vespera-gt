@@ -2,7 +2,7 @@
 
 Sito statico in `dist/` (pubblicato su GitHub Pages dal workflow `.github/workflows/pages.yml`, nessun bundler; three.js r128 copiato in `vendor/`): una coupé generata in codice con
 configuratore, laboratorio di forma, galleria del vento con CFD sulla GPU e un gioco di guida completo
-(tre circuiti, fisica a quattro ruote, piloti del computer, meteo, box, campionato, classifica condivisa).
+(quattro circuiti fra cui un cittadino, fisica a quattro ruote con scocca rigida Rapier, piloti del computer, meteo, box, campionato, classifica condivisa).
 
 ## Lingua e stile
 - Testi dell'interfaccia e commenti nel codice in **italiano**, con frasi complete (niente gergo).
@@ -32,14 +32,17 @@ src/track/track-b12.js traiettoria consigliata colorata (verde gas, giallo alza,
 src/track/track-b13.js danni: ali e sospensioni piegate dagli urti, convergenza storta, meno carico, riparazione ai box
 src/track/track-b14.js texture fotografiche CC0 (ghiaia, prato, inerti dell'asfalto) e luce da HDRI Poly Haven per ora del giorno (trkEnvFor)
 src/track/track-b15.js interfaccia da console: menu iniziale e schermate (Gara veloce, Garage, Officina, Impostazioni) che spostano i blocchi esistenti
+src/track/track-b16.js scocca rigida 3D con Rapier: sospensioni per ruota, carichi dalle molle, guard rail e contatti fra auto, urti → danni
+src/track/track-b17.js circuito cittadino (TRKDEF.urban): muri con rete, palazzi istanziati, mare, lampioni, finestre accese di notte
 src/console.css        stile dell'interfaccia da console (incollato dopo game.css)
 src/assets/            immagini JPG CC0 di ambientCG (vedi LEGGIMI.md), copiate in dist/assets da build.py
 vendor/three/          three.js r128, OrbitControls, GLTFLoader, RGBELoader (licenza MIT), copiati in dist/lib
+vendor/rapier/         @dimforge/rapier3d-compat 0.14.0 (Apache-2.0): rapier.es.js per il sito (import dinamico), rapier.cjs.js per le prove
 build.py               incolla i file in base.html e scrive dist/index.html
 tools/                 simulazioni e prove (vedi sotto)
 ```
 I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/* viste */`, nell'ordine
-`track-core, track-a, b1 … b15`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
+`track-core, track-a, b1 … b17`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
 
 ## Comandi
 - Build: `python3 build.py` → `dist/index.html` (va rifatta dopo ogni modifica in `src/`).
@@ -52,6 +55,8 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
   `node tools/stab-t.js` (sterzate e staccate a 280 km/h, deriva massima), `node tools/handling-t.js [passo] [giri]` (giro su tutti i circuiti
   con un pilota «da tastiera»; `KBD=0` sterzo proporzionale, `ASSIST=0` senza aiuti), `node tools/dmg-t.js` (urti, tiro laterale, sosta di riparazione).
   Il banco comune è `tools/harness.js`. `racesim.js` include i danni (`DMG=0` per spegnerli) e stampa danni massimi e finali.
+- Scocca Rapier: `node tools/rb-t.js` (carichi, 0-100, frenata con beccheggio, curva con rollio, cordoli, salti); `RB=0` davanti a
+  qualsiasi prova (racesim, harness) usa la fisica piana per confrontare. Le prove basate su harness aspettano `ready` prima di partire.
 - Dati dei circuiti (lunghezza, curve, dislivello): `node tools/t2check.js`; progetto di un nuovo tracciato: `tools/t3design.js`.
 - Prove nel browser (Playwright + Chromium software):
   `python3 tools/mk_test.py` (crea `dist/_test.html` con un finto `window.claude` e agganci `__TRK()`, `__STEP(n)`, `__RENDER()`, `__CH()`),
@@ -84,4 +89,12 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
   vengono spostati da `csBuild()` nelle schermate di `#cs`; la logica resta legata agli id. `#tPista` deve restare con `hidden=false`
   (trkDirty ricalcola il giro solo se è visibile). Il vecchio pannello `aside.panel` è vuoto e nascosto. Nuovi comandi: mettili nei blocchi
   esistenti o in `csBuild()`, e nei test usa `csGo('race'|'garage'|'lab'|'opt'|'home')`.
+- **Scocca Rapier** (track-b16): trkPhysics calcola gomme, motore e aiuti come prima, ma con `P.rb` i carichi delle ruote vengono
+  dalle molle (`P.rb.fz`) e le forze vanno al corpo rigido (`trkRbForces`) invece dell'integrazione piana. Il mondo fa un passo quando
+  un'auto riceve le forze per la seconda volta (`RB.pend`); le auto senza fisica in quel passo (box, via, giro automatico) seguono
+  `P.car` con `trkRbPlace`. Dopo ogni teletrasporto di `P.car` (reset, test) chiamare `trkRbPlace`. Il suolo è analitico (`trkRbGround`:
+  quota della strada e dentellatura dei cordoli), niente collider di terreno; ribaltata per 2 s o sotto il suolo → rimessa dritta.
+  Urti = variazione di velocità non spiegata dalle forze applicate → `trkDmgHit`. `trkCollide`, `trkCarsCollide`, `trkVertical` sono saltati.
+- **Circuito cittadino**: `TRKDEF.urban` cambia barriere (muri a 2,4 m, strade di scampo all'esterno delle curve lente), niente ghiaia
+  né lago, superficie fuori dal bordo = asfalto, scenario di track-b17. Il mare è a X > −60, Y > 610: niente palazzi lì.
 - Prestazioni: la scena con 8 auto fa ~1200 draw call; aggiungere oggetti uniti o istanziati, non mesh sciolte.

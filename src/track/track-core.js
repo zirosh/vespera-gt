@@ -18,7 +18,14 @@ const TRK_DEFS=[
   pts:[[-400,0],[200,0],[560,0],[690,25],[745,110],[725,230],[640,320],[520,370],[420,360],[365,370],[345,410],[375,445],[480,480],[590,530],[640,575],[625,625],[570,650],[460,665],[350,700],[270,760],[250,830],[200,880],[120,890],[40,850],[-60,800],[-150,790],[-230,760],[-275,700],[-250,640],[-280,575],[-350,530],[-410,470],[-440,390],[-470,320],[-470,255],[-545,210],[-508,82]],
   hills:[[420,950,66,340],[-120,800,22,170],[650,420,8,120]],
   corners:['Curva del Brenta','Tornante Basso','Tornante Alto','Cima','Curvone della Discesa','Esse delle Malghe','Curva del Bosco','Ultima'],
-  bridge:[-300,-150,600],tower:[-800,1150]}];
+  bridge:[-300,-150,600],tower:[-800,1150]},
+ {id:'porto',name:'Circuito Cittadino di Porto Vespera',short:'Porto',banner:'GRAN PREMIO DI PORTO VESPERA',autumn:false,urban:true,
+  /* Porto Vespera: un cittadino in piano fra i palazzi, tutto curve a 90° fra muri di cemento, il lungomare con la chicane del mercato
+     e il tornante del Duomo; niente vie di fuga, solo qualche strada di scampo all'esterno delle curve lente */
+  pts:[[-400,0],[200,0],[560,0],[614,0],[639,11],[650,36],[650,168],[640,190],[618,200],[500,200],[479,209],[470,230],[470,300],[479,321],[500,330],[668,330],[690,340],[700,362],[700,522],[689,549],[662,560],[440,560],[415,578],[365,578],[340,560],[130,560],[109,551],[100,530],[100,450],[91,429],[70,420],[-132,420],[-145,425],[-150,438],[-150,588],[-160,610],[-182,620],[-394,620],[-425,611],[-448,589],[-525,455],[-539,418],[-545,380],[-545,210],[-508,82]],
+  hills:[[0,500,3,220],[-300,300,2,200]],
+  corners:['Curva del Porto','Piazza Grande','Via Roma','Corso Italia','Curva del Faro','Lungomare','Chicane del Mercato','Curva della Stazione','Viale dei Tigli','Tornante del Duomo','Curva del Teatro','Piazza Garibaldi','Curvone dei Bastioni'],
+  bridge:[180,205,550],tower:[-800,1150]}];
 const TRK_PTS=[[-400,0],[200,0],[560,0],[700,10],[765,65],[725,128],[640,132],[470,150],[350,195],[290,290],[300,410],[370,540],[500,625],[625,700],[650,790],[575,862],[330,884],[205,885],[168,884],[146,876],[126,864],[104,860],[82,869],[58,881],[10,884],[-150,882],[-330,846],[-430,750],[-468,632],[-436,556],[-472,484],[-528,372],[-545,220],[-510,85]];
 const TRK_W=12;        // larghezza della carreggiata
 /* colline: [X, Y, altezza, raggio] — salita dopo il tornante fino al Curvone, dosso sul rettilineo opposto prima della chicane,

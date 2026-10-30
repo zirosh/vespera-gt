@@ -33,7 +33,7 @@ function csBuild(){
   const mass=csGrp('trkMass'),tires=csById('trkTires'),assist=csById('trkAssist');
   const pGar=csGroup('Massa e potenza'),pH=[...mass.querySelectorAll('h2')];
   pGar.append(pH[0],csById('trkMass'),pH[1],csById('trkKw'),csToggles('trkSame'),csById('trkTypical'));
-  const guida=csGroup('Aiuti alla guida',csToggles('trkAssist','trkLine','trkDmg','trkGhost'));
+  const guida=csGroup('Aiuti alla guida',csToggles('trkAssist','trkLine','trkDmg','trkRb','trkGhost'));
   const grafica=csGroup('Effetti',csToggles('trkFxPost','trkFxRefl','trkFxShadow'));
   const cam=csGrp('trkCam'),pad=csGrp('trkPadState'),board=csGrp('trkBoard'),chart=csGrp('trkChart'),corners=csGrp('trkCorners'),cmp=csGrp('trkSave'),ideal=csGrp('trkLap');
   const gTires=csGroup('Gomme di partenza',tires);mass.remove();

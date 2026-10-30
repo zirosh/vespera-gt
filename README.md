@@ -1,7 +1,8 @@
 # Vespera GT
 
 Coupé costruita interamente in codice (three.js) con configuratore, laboratorio di forma, galleria del vento
-con CFD sulla scheda video e un gioco di guida: tre circuiti (Prealpi, Montello, Grappa), fisica a quattro ruote,
+con CFD sulla scheda video e un gioco di guida: quattro circuiti (Prealpi, Montello, Grappa e il cittadino di Porto Vespera),
+fisica a quattro ruote con scocca rigida 3D (Rapier: sospensioni, rollio, beccheggio, urti),
 fino a otto auto con piloti del computer, meteo variabile, box, danni (ali e sospensioni, riparazione ai box), traiettoria consigliata,
 texture fotografiche CC0, controller Xbox, schermo diviso, campionato con officina.
 

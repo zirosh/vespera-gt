@@ -2,7 +2,8 @@
    per ogni assetto e circuito un pilota «da tastiera» (sterzo tutto o niente, come i tasti) segue la traiettoria
    al passo del simulatore e si contano uscite di pista, testacoda e angolo di deriva massimo.
    uso: node tools/handling-t.js [passo 1.0] [giri 2]   — AERO=file.json per altre tabelle, ASSIST=0 senza aiuti */
-const {ctx,vm,TRK,H,tables,mkV,clamp}=require('./harness.js');
+const {ctx,vm,TRK,H,tables,mkV,clamp,ready}=require('./harness.js');
+ready.then(()=>{
 const pace=+(process.argv[2]||1),laps=+(process.argv[3]||2);
 const rows=[];
 for(const tr of [0,1,2]){
@@ -29,3 +30,5 @@ for(const tr of [0,1,2]){
     rows.push({tr,name,sim:P.sim.lap.toFixed(1),giri:lapT.map(x=>x.toFixed(1)).join(' '),vmax:(vmax*3.6).toFixed(0),fuori:off.toFixed(1),testacoda:spins,deriva:(bmax*57.3).toFixed(1)});
   }}
 console.table(rows);
+console.log('scocca',ctx.RAPIER&&process.env.RB!=='0'?'Rapier':'piana');
+});
