@@ -32,7 +32,7 @@ function trkCityBuild(){
    trkRibbon(Pd.qB+32-N,Pd.qIn+28,i=>TRK.bar[0][i]+0.05,0,1.05,3,fen,3.6);trkRibbon(0,N,i=>-TRK.bar[1][i]-0.05,0,1.05,3,fen,3.6);}
   /* palazzi: lungo le strade, oltre il marciapiede, senza invadere la pista, il mare o i palazzi già messi */
   const blds=[],near=(X,Y,r)=>{for(const b of blds)if(Math.hypot(b.X-X,b.Y-Y)<b.r+r)return true;return false;};
-  const sea=(X,Y)=>X>-60&&Y>610;
+  const sea=(X,Y)=>Y>(D.sea||1e9);
   const clear=(X,Y,r)=>{if(sea(X,Y))return false;const d=trkDistTrack(X,Y,3);if(d<hw+r+7)return false;
     const n=trkNearest(X,Y);if(n.i>=0){const s=((X-T.X[n.i])*T.nx[n.i]+(Y-T.Y[n.i])*T.ny[n.i])>0?0:1;if(d<TRK.bar[s][n.i]+r*0.75+5)return false;}
     if(TRK.pitZone&&n.i>=0&&TRK.pitZone[n.i]&&d<70)return false;return !near(X,Y,r);};
@@ -52,9 +52,18 @@ function trkCityBuild(){
   blds.forEach((b,k)=>{ps.set(b.X,trkGroundH(b.X,b.Y)-0.3,-b.Y);q.setFromAxisAngle(up,b.a);sc.set(b.W,b.H,b.D);m4.compose(ps,q,sc);M.setMatrixAt(k,m4);M.setColorAt(k,c.setHex(TRK_FACADE[k%TRK_FACADE.length]));});
   M.instanceColor.needsUpdate=true;M.castShadow=M.receiveShadow=true;M.frustumCulled=false;tw.add(M);TRK.cityFacade=facade;
   /* il mare oltre il lungomare */
-  {const sh=new THREE.Shape([new THREE.Vector2(-60,612),new THREE.Vector2(2400,612),new THREE.Vector2(2400,3200),new THREE.Vector2(-60,3200)]);
+  if(D.sea){const y0=D.sea,sh=new THREE.Shape([new THREE.Vector2(-2400,y0),new THREE.Vector2(2400,y0),new THREE.Vector2(2400,3200),new THREE.Vector2(-2400,3200)]);
    const w=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshStandardMaterial({color:0x1d4f6b,roughness:0.12,metalness:0.1,envMapIntensity:1.2}));
    w.rotation.x=-Math.PI/2;w.position.y=0.25;w.receiveShadow=true;tw.add(w);}
+  /* galleria sul lungomare: soffitto di cemento a 6,5 m che fa ombra, tubi di luce lungo il soffitto; il buio dentro viene dall'ombra */
+  if(D.tunnel){const [x0,x1,y0]=D.tunnel;let i0=-1,i1=-1;for(let i=0;i<N;i++){const in_=T.X[i]>x0&&T.X[i]<x1&&T.Y[i]>y0;if(in_&&i0<0)i0=i;if(in_)i1=i;}
+    if(i0>0&&i1>i0){/* soffitto e pareti scuri e senza luce propria: dentro la galleria si passa nella penombra, con i tubi di luce sopra */
+      const roofM=trkWorldMap(new THREE.MeshBasicMaterial({color:0x34373a,map:trkConcreteTex().map,side:THREE.DoubleSide}),3,0.1);
+      const r=trkRibbon(i0,i1,i=>TRK.bar[0][i]+0.8,i=>-TRK.bar[1][i]-0.8,6.5,6,roofM);r.castShadow=true;
+      for(const s of [0,1])trkRibbon(i0,i1,i=>(s?-1:1)*(TRK.bar[s][i]+0.8),0,1.05,4,roofM,6.5).castShadow=true;
+      const lt=new THREE.MeshBasicMaterial({color:new THREE.Color(0xffe6b8).multiplyScalar(2.2),side:THREE.DoubleSide});
+      for(const o of [-2.2,2.2])trkRibbon(i0,i1,o-0.12,o+0.12,6.45,4,lt);
+      TRK.tunnel=[i0,i1];}}
   /* lampioni lungo i muri, ogni 40 metri */
   {const pole=new THREE.CylinderGeometry(0.09,0.13,8,6);pole.translate(0,4,0);const arm=new THREE.BoxGeometry(1.6,0.12,0.25);arm.translate(-0.8,7.9,0);
    const lamp=new THREE.BoxGeometry(0.7,0.18,0.35);lamp.translate(-1.5,7.8,0);

@@ -120,6 +120,7 @@ function trkRbStep(h){
 /* dalla scocca allo stato dell'auto usato da tutto il resto (posizione, imbardata, velocità nel telaio, accelerazioni) */
 function trkRbSync(P,h){
   const B=P.rb,body=B.body,c=P.car,V=P.veh,t=body.translation(),q=body.rotation(),lv=body.linvel(),av=body.angvel();
+  if(!isFinite(t.x+t.y+t.z+q.w+lv.x+lv.y+lv.z+av.y)){trkRbRecover(P);return;}
   trkRbRot(q,1,0,0,_rv);let dp=Math.atan2(-_rv[2],_rv[0])-c.psi;dp-=Math.round(dp/(2*Math.PI))*2*Math.PI;c.psi+=dp;
   const cp=Math.cos(c.psi),sp=Math.sin(c.psi);c.X=t.x;c.Y=-t.z;
   let vx=lv.x*cp-lv.z*sp,vy=-lv.x*sp-lv.z*cp,r=av.y;
@@ -131,7 +132,7 @@ function trkRbSync(P,h){
   if(kb<1||vx!==(lv.x*cp-lv.z*sp)){body.setLinvel({x:vx*cp-vy*sp,y:lv.y,z:-(vx*sp+vy*cp)},true);body.setAngvel({x:av.x,y:r,z:av.z},true);}
   /* accelerazioni nel telaio (servono a freni, aerodinamica e telemetria) */
   const ax=((lv.x-B.v0[0])*cp-(lv.z-B.v0[2])*sp)/h,ay=(-(lv.x-B.v0[0])*sp-(lv.z-B.v0[2])*cp)/h;
-  c.ax+=(ax-c.ax)*Math.min(1,h/0.05);c.ay+=(ay-c.ay)*Math.min(1,h/0.05);c.vx=vx;c.vy=vy;c.r=r;
+  if(isFinite(ax)&&isFinite(ay)){c.ax+=(clamp(ax,-80,80)-c.ax)*Math.min(1,h/0.05);c.ay+=(clamp(ay,-80,80)-c.ay)*Math.min(1,h/0.05);}c.vx=vx;c.vy=vy;c.r=r;
   /* urti: la variazione di velocità che le forze applicate e la gravità non spiegano viene dagli impulsi di contatto */
   const m=V.m,ex=B.F[0]/m*h,ez=B.F[2]/m*h,rx=lv.x-B.v0[0]-ex,rz=lv.z-B.v0[2]-ez;
   /* un urto conta per i primi 80 ms (poi pausa di 0,3 s): strisciare lungo un muro non somma un danno enorme; solo il piano orizzontale */
@@ -140,11 +141,19 @@ function trkRbSync(P,h){
   else if(B.cool>0){B.cool-=h;if(rh>h*120){B.hit[0]=rx;B.hit[2]=rz;B.hitT=0.08;B.cool=0;}}
   else if(rh>h*25){B.hit[0]=rx;B.hit[2]=rz;B.hitT=0.08;}
   P.gm=(B.fz[0]+B.fz[1]+B.fz[2]+B.fz[3])/(m*9.81);
+  if(isFinite(c.X+c.Y+c.psi))B.good={X:c.X,Y:c.Y,psi:c.psi,i:c.i,d:c.d};
   P.zc=t.y-B.h;if(P.air&&!B.wasAir)B.landV=0;if(P.air)B.landV=Math.min(B.landV,lv.y);
   /* ribaltata (tetto verso il basso) per più di due secondi, o finita sotto il suolo: i commissari la rimettono dritta */
   trkRbRot(q,0,1,0,_rw);const gH=trkRbGround(c.X,c.Y,c.i);
   if(_rw[1]<0.35)B.flipT=(B.flipT||0)+h;else B.flipT=0;
   if(B.flipT>2||t.y<gH-1){B.flipT=0;c.vx=0;c.vy=0;c.r=0;trkRbPlace(P);if(!P.isAI)trkToast(P,'Auto ribaltata: i commissari la rimettono in pista',2.4);}
+}
+/* il motore fisico ha restituito valori non numerici: l'auto torna ferma all'ultima posizione valida, con una scocca nuova */
+function trkRbRecover(P){
+  const c=P.car,G=P.rb&&P.rb.good;trkRbDrop(P);
+  if(G)Object.assign(c,G);for(const k of ['vx','vy','r','ax','ay','delta'])c[k]=0;
+  if(!isFinite(c.X+c.Y+c.psi)||c.i==null||!isFinite(c.i)){trkReset(P,false);}
+  trkWheelSync(P);
 }
 /* fine di un urto: danni, avviso e giro non valido come con le barriere di prima */
 function trkRbHit(P){
@@ -156,6 +165,11 @@ function trkRbHit(P){
 
 /* ---------- agganci ---------- */
 {const f=trkPhysics;trkPhysics=function(P,h){
+  /* fotogrammi quasi sovrapposti danno passi nulli o di pochi decimillesimi di secondo: le accelerazioni (Δv/h) esploderebbero.
+     Sotto 0,2 ms il passo si salta (il tempo perso è trascurabile) */
+  if(!(h>2e-4))return;
+  /* rete di sicurezza: un valore non numerico nello stato dell'auto non deve propagarsi (si azzera, e la scocca torna dov'è l'auto) */
+  {const c=P.car;if(!isFinite(c.X+c.Y+c.psi+c.ax+c.ay+c.vx+c.vy+c.r+c.delta))trkRbRecover(P);}
   if(!trkRbUse(P)){if(P.rb)trkRbDrop(P);return f(P,h);}
   if(RB.pend.has(P))trkRbStep(h);
   trkRbSusp(P,h);f(P,h);};}

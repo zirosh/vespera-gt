@@ -3725,12 +3725,14 @@ const TRK_DEFS=[
   corners:['Curva del Brenta','Tornante Basso','Tornante Alto','Cima','Curvone della Discesa','Esse delle Malghe','Curva del Bosco','Ultima'],
   bridge:[-300,-150,600],tower:[-800,1150]},
  {id:'porto',name:'Circuito Cittadino di Porto Vespera',short:'Porto',banner:'GRAN PREMIO DI PORTO VESPERA',autumn:false,urban:true,
-  /* Porto Vespera: un cittadino in piano fra i palazzi, tutto curve a 90° fra muri di cemento, il lungomare con la chicane del mercato
-     e il tornante del Duomo; niente vie di fuga, solo qualche strada di scampo all'esterno delle curve lente */
-  pts:[[-400,0],[200,0],[560,0],[614,0],[639,11],[650,36],[650,168],[640,190],[618,200],[500,200],[479,209],[470,230],[470,300],[479,321],[500,330],[668,330],[690,340],[700,362],[700,522],[689,549],[662,560],[440,560],[415,578],[365,578],[340,560],[130,560],[109,551],[100,530],[100,450],[91,429],[70,420],[-132,420],[-145,425],[-150,438],[-150,588],[-160,610],[-182,620],[-394,620],[-425,611],[-448,589],[-525,455],[-539,418],[-545,380],[-545,210],[-508,82]],
-  hills:[[0,500,3,220],[-300,300,2,200]],
-  corners:['Curva del Porto','Piazza Grande','Via Roma','Corso Italia','Curva del Faro','Lungomare','Chicane del Mercato','Curva della Stazione','Viale dei Tigli','Tornante del Duomo','Curva del Teatro','Piazza Garibaldi','Curvone dei Bastioni'],
-  bridge:[180,205,550],tower:[-800,1150]}];
+  /* Porto Vespera, sul modello dei grandi cittadini di mare: dopo il via si sale fra i palazzi fino alla piazza del Casinò (36 m),
+     si scende al tornante dell'Albergo (22 km/h), si torna al mare e si passa la galleria in curva, la più veloce del giro;
+     all'uscita la chicane del porto, poi le esse della piscina e la Pescheria prima del curvone che riporta al traguardo */
+  pts:[[-400,0],[200,0],[560,0],[620,0],[636,6],[645,19],[658,67],[662,110],[656,153],[653,162],[647,200],[651,238],[655,251],[654,282],[639,309],[609,337],[588,349],[564,353],[519,351],[506,353],[494,359],[476,376],[464,381],[451,382],[419,373],[405,372],[391,372],[328,382],[312,388],[298,399],[222,485],[218,500],[231,508],[340,520],[423,553],[434,563],[436,578],[424,630],[416,646],[401,657],[150,745],[-100,725],[-150,707],[-185,719],[-210,701],[-235,701],[-258,717],[-325,709],[-357,699],[-385,680],[-420,645],[-401,604],[-433,563],[-414,522],[-468,459],[-473,445],[-468,431],[-440,398],[-520,346],[-537,326],[-545,300],[-545,210],[-508,82]],
+  hills:[[540,330,30,210],[300,440,14,170],[-450,520,5,150]],
+  corners:['Curva di Santa Lucia','Salita del Belvedere','Piazza del Casinò',"Tornante dell'Albergo",'Curva del Molo','Chicane del Porto','Esse della Piscina','Curva della Pescheria','Curvone dei Bastioni'],
+  /* niente ponte: sul lungomare c'è la galleria (track-b17); il mare è oltre Y = 775 */
+  bridge:[1e9,1e9,0],tower:[-800,1150],sea:775,tunnel:[-80,390,690]}];
 const TRK_PTS=[[-400,0],[200,0],[560,0],[700,10],[765,65],[725,128],[640,132],[470,150],[350,195],[290,290],[300,410],[370,540],[500,625],[625,700],[650,790],[575,862],[330,884],[205,885],[168,884],[146,876],[126,864],[104,860],[82,869],[58,881],[10,884],[-150,882],[-330,846],[-430,750],[-468,632],[-436,556],[-472,484],[-528,372],[-545,220],[-510,85]];
 const TRK_W=12;        // larghezza della carreggiata
 /* colline: [X, Y, altezza, raggio] — salita dopo il tornante fino al Curvone, dosso sul rettilineo opposto prima della chicane,
@@ -7324,6 +7326,7 @@ function trkRbStep(h){
 /* dalla scocca allo stato dell'auto usato da tutto il resto (posizione, imbardata, velocità nel telaio, accelerazioni) */
 function trkRbSync(P,h){
   const B=P.rb,body=B.body,c=P.car,V=P.veh,t=body.translation(),q=body.rotation(),lv=body.linvel(),av=body.angvel();
+  if(!isFinite(t.x+t.y+t.z+q.w+lv.x+lv.y+lv.z+av.y)){trkRbRecover(P);return;}
   trkRbRot(q,1,0,0,_rv);let dp=Math.atan2(-_rv[2],_rv[0])-c.psi;dp-=Math.round(dp/(2*Math.PI))*2*Math.PI;c.psi+=dp;
   const cp=Math.cos(c.psi),sp=Math.sin(c.psi);c.X=t.x;c.Y=-t.z;
   let vx=lv.x*cp-lv.z*sp,vy=-lv.x*sp-lv.z*cp,r=av.y;
@@ -7335,7 +7338,7 @@ function trkRbSync(P,h){
   if(kb<1||vx!==(lv.x*cp-lv.z*sp)){body.setLinvel({x:vx*cp-vy*sp,y:lv.y,z:-(vx*sp+vy*cp)},true);body.setAngvel({x:av.x,y:r,z:av.z},true);}
   /* accelerazioni nel telaio (servono a freni, aerodinamica e telemetria) */
   const ax=((lv.x-B.v0[0])*cp-(lv.z-B.v0[2])*sp)/h,ay=(-(lv.x-B.v0[0])*sp-(lv.z-B.v0[2])*cp)/h;
-  c.ax+=(ax-c.ax)*Math.min(1,h/0.05);c.ay+=(ay-c.ay)*Math.min(1,h/0.05);c.vx=vx;c.vy=vy;c.r=r;
+  if(isFinite(ax)&&isFinite(ay)){c.ax+=(clamp(ax,-80,80)-c.ax)*Math.min(1,h/0.05);c.ay+=(clamp(ay,-80,80)-c.ay)*Math.min(1,h/0.05);}c.vx=vx;c.vy=vy;c.r=r;
   /* urti: la variazione di velocità che le forze applicate e la gravità non spiegano viene dagli impulsi di contatto */
   const m=V.m,ex=B.F[0]/m*h,ez=B.F[2]/m*h,rx=lv.x-B.v0[0]-ex,rz=lv.z-B.v0[2]-ez;
   /* un urto conta per i primi 80 ms (poi pausa di 0,3 s): strisciare lungo un muro non somma un danno enorme; solo il piano orizzontale */
@@ -7344,11 +7347,19 @@ function trkRbSync(P,h){
   else if(B.cool>0){B.cool-=h;if(rh>h*120){B.hit[0]=rx;B.hit[2]=rz;B.hitT=0.08;B.cool=0;}}
   else if(rh>h*25){B.hit[0]=rx;B.hit[2]=rz;B.hitT=0.08;}
   P.gm=(B.fz[0]+B.fz[1]+B.fz[2]+B.fz[3])/(m*9.81);
+  if(isFinite(c.X+c.Y+c.psi))B.good={X:c.X,Y:c.Y,psi:c.psi,i:c.i,d:c.d};
   P.zc=t.y-B.h;if(P.air&&!B.wasAir)B.landV=0;if(P.air)B.landV=Math.min(B.landV,lv.y);
   /* ribaltata (tetto verso il basso) per più di due secondi, o finita sotto il suolo: i commissari la rimettono dritta */
   trkRbRot(q,0,1,0,_rw);const gH=trkRbGround(c.X,c.Y,c.i);
   if(_rw[1]<0.35)B.flipT=(B.flipT||0)+h;else B.flipT=0;
   if(B.flipT>2||t.y<gH-1){B.flipT=0;c.vx=0;c.vy=0;c.r=0;trkRbPlace(P);if(!P.isAI)trkToast(P,'Auto ribaltata: i commissari la rimettono in pista',2.4);}
+}
+/* il motore fisico ha restituito valori non numerici: l'auto torna ferma all'ultima posizione valida, con una scocca nuova */
+function trkRbRecover(P){
+  const c=P.car,G=P.rb&&P.rb.good;trkRbDrop(P);
+  if(G)Object.assign(c,G);for(const k of ['vx','vy','r','ax','ay','delta'])c[k]=0;
+  if(!isFinite(c.X+c.Y+c.psi)||c.i==null||!isFinite(c.i)){trkReset(P,false);}
+  trkWheelSync(P);
 }
 /* fine di un urto: danni, avviso e giro non valido come con le barriere di prima */
 function trkRbHit(P){
@@ -7360,6 +7371,11 @@ function trkRbHit(P){
 
 /* ---------- agganci ---------- */
 {const f=trkPhysics;trkPhysics=function(P,h){
+  /* fotogrammi quasi sovrapposti danno passi nulli o di pochi decimillesimi di secondo: le accelerazioni (Δv/h) esploderebbero.
+     Sotto 0,2 ms il passo si salta (il tempo perso è trascurabile) */
+  if(!(h>2e-4))return;
+  /* rete di sicurezza: un valore non numerico nello stato dell'auto non deve propagarsi (si azzera, e la scocca torna dov'è l'auto) */
+  {const c=P.car;if(!isFinite(c.X+c.Y+c.psi+c.ax+c.ay+c.vx+c.vy+c.r+c.delta))trkRbRecover(P);}
   if(!trkRbUse(P)){if(P.rb)trkRbDrop(P);return f(P,h);}
   if(RB.pend.has(P))trkRbStep(h);
   trkRbSusp(P,h);f(P,h);};}
@@ -7410,7 +7426,7 @@ function trkCityBuild(){
    trkRibbon(Pd.qB+32-N,Pd.qIn+28,i=>TRK.bar[0][i]+0.05,0,1.05,3,fen,3.6);trkRibbon(0,N,i=>-TRK.bar[1][i]-0.05,0,1.05,3,fen,3.6);}
   /* palazzi: lungo le strade, oltre il marciapiede, senza invadere la pista, il mare o i palazzi già messi */
   const blds=[],near=(X,Y,r)=>{for(const b of blds)if(Math.hypot(b.X-X,b.Y-Y)<b.r+r)return true;return false;};
-  const sea=(X,Y)=>X>-60&&Y>610;
+  const sea=(X,Y)=>Y>(D.sea||1e9);
   const clear=(X,Y,r)=>{if(sea(X,Y))return false;const d=trkDistTrack(X,Y,3);if(d<hw+r+7)return false;
     const n=trkNearest(X,Y);if(n.i>=0){const s=((X-T.X[n.i])*T.nx[n.i]+(Y-T.Y[n.i])*T.ny[n.i])>0?0:1;if(d<TRK.bar[s][n.i]+r*0.75+5)return false;}
     if(TRK.pitZone&&n.i>=0&&TRK.pitZone[n.i]&&d<70)return false;return !near(X,Y,r);};
@@ -7430,9 +7446,18 @@ function trkCityBuild(){
   blds.forEach((b,k)=>{ps.set(b.X,trkGroundH(b.X,b.Y)-0.3,-b.Y);q.setFromAxisAngle(up,b.a);sc.set(b.W,b.H,b.D);m4.compose(ps,q,sc);M.setMatrixAt(k,m4);M.setColorAt(k,c.setHex(TRK_FACADE[k%TRK_FACADE.length]));});
   M.instanceColor.needsUpdate=true;M.castShadow=M.receiveShadow=true;M.frustumCulled=false;tw.add(M);TRK.cityFacade=facade;
   /* il mare oltre il lungomare */
-  {const sh=new THREE.Shape([new THREE.Vector2(-60,612),new THREE.Vector2(2400,612),new THREE.Vector2(2400,3200),new THREE.Vector2(-60,3200)]);
+  if(D.sea){const y0=D.sea,sh=new THREE.Shape([new THREE.Vector2(-2400,y0),new THREE.Vector2(2400,y0),new THREE.Vector2(2400,3200),new THREE.Vector2(-2400,3200)]);
    const w=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshStandardMaterial({color:0x1d4f6b,roughness:0.12,metalness:0.1,envMapIntensity:1.2}));
    w.rotation.x=-Math.PI/2;w.position.y=0.25;w.receiveShadow=true;tw.add(w);}
+  /* galleria sul lungomare: soffitto di cemento a 6,5 m che fa ombra, tubi di luce lungo il soffitto; il buio dentro viene dall'ombra */
+  if(D.tunnel){const [x0,x1,y0]=D.tunnel;let i0=-1,i1=-1;for(let i=0;i<N;i++){const in_=T.X[i]>x0&&T.X[i]<x1&&T.Y[i]>y0;if(in_&&i0<0)i0=i;if(in_)i1=i;}
+    if(i0>0&&i1>i0){/* soffitto e pareti scuri e senza luce propria: dentro la galleria si passa nella penombra, con i tubi di luce sopra */
+      const roofM=trkWorldMap(new THREE.MeshBasicMaterial({color:0x34373a,map:trkConcreteTex().map,side:THREE.DoubleSide}),3,0.1);
+      const r=trkRibbon(i0,i1,i=>TRK.bar[0][i]+0.8,i=>-TRK.bar[1][i]-0.8,6.5,6,roofM);r.castShadow=true;
+      for(const s of [0,1])trkRibbon(i0,i1,i=>(s?-1:1)*(TRK.bar[s][i]+0.8),0,1.05,4,roofM,6.5).castShadow=true;
+      const lt=new THREE.MeshBasicMaterial({color:new THREE.Color(0xffe6b8).multiplyScalar(2.2),side:THREE.DoubleSide});
+      for(const o of [-2.2,2.2])trkRibbon(i0,i1,o-0.12,o+0.12,6.45,4,lt);
+      TRK.tunnel=[i0,i1];}}
   /* lampioni lungo i muri, ogni 40 metri */
   {const pole=new THREE.CylinderGeometry(0.09,0.13,8,6);pole.translate(0,4,0);const arm=new THREE.BoxGeometry(1.6,0.12,0.25);arm.translate(-0.8,7.9,0);
    const lamp=new THREE.BoxGeometry(0.7,0.18,0.35);lamp.translate(-1.5,7.8,0);

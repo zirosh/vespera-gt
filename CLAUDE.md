@@ -95,6 +95,11 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
   `P.car` con `trkRbPlace`. Dopo ogni teletrasporto di `P.car` (reset, test) chiamare `trkRbPlace`. Il suolo è analitico (`trkRbGround`:
   quota della strada e dentellatura dei cordoli), niente collider di terreno; ribaltata per 2 s o sotto il suolo → rimessa dritta.
   Urti = variazione di velocità non spiegata dalle forze applicate → `trkDmgHit`. `trkCollide`, `trkCarsCollide`, `trkVertical` sono saltati.
+- **Porto Vespera** (TRK_DEFS[3]) è un cittadino tortuoso di mare: salita alla piazza (36 m), tornante, galleria (`TRKDEF.tunnel=[X0,X1,Y0]`,
+  tratto con X fra X0 e X1 e Y > Y0), mare oltre `TRKDEF.sea` (Y). I rami del tornante distano ~65 m: va bene in città (muri a 2,4 m).
+- **Passi di tempo minuscoli**: nel browser capitano fotogrammi a pochi decimillesimi di secondo; con Rapier Δv/h esplode. Il wrapper di
+  trkPhysics in track-b16 salta i passi sotto 0,2 ms e, se lo stato diventa comunque non numerico, `trkRbRecover` rimette l'auto all'ultima
+  posizione valida con una scocca nuova. Non togliere queste protezioni.
 - **Circuito cittadino**: `TRKDEF.urban` cambia barriere (muri a 2,4 m, strade di scampo all'esterno delle curve lente), niente ghiaia
   né lago, superficie fuori dal bordo = asfalto, scenario di track-b17. Il mare è a X > −60, Y > 610: niente palazzi lì.
 - Prestazioni: la scena con 8 auto fa ~1200 draw call; aggiungere oggetti uniti o istanziati, non mesh sciolte.
