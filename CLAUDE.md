@@ -36,6 +36,7 @@ src/track/track-b16.js scocca rigida 3D con Rapier: sospensioni per ruota, caric
 src/track/track-b17.js circuito cittadino (TRKDEF.urban): muri con rete, palazzi istanziati, mare, lampioni, finestre accese di notte
 src/track/track-b18.js asfalto fotografico Poly Haven su tutti i circuiti, modelli glTF CC0 istanziati (panchine, fioriere, barili, gomme)
 src/track/track-b19.js assetto nel Garage (molle, barre antirollio → SETUP.kf/kr ed equilibrium, scocca Rapier dei giocatori), ruote che seguono le molle, vibrazione dai carichi
+src/track/track-b20.js anteprima grande del circuito in Gara veloce, riepilogo di fine gara (posizioni, giro migliore, velocità massima, danni, distacco per giro)
 src/console.css        stile dell'interfaccia da console (incollato dopo game.css)
 src/assets/            immagini JPG CC0 di ambientCG (vedi LEGGIMI.md), copiate in dist/assets da build.py
 vendor/three/          three.js r128, OrbitControls, GLTFLoader, RGBELoader (licenza MIT), copiati in dist/lib
@@ -44,7 +45,7 @@ build.py               incolla i file in base.html e scrive dist/index.html
 tools/                 simulazioni e prove (vedi sotto)
 ```
 I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/* viste */`, nell'ordine
-`track-core, track-a, b1 … b19`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
+`track-core, track-a, b1 … b20`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
 
 ## Comandi
 - Build: `python3 build.py` → `dist/index.html` (va rifatta dopo ogni modifica in `src/`).
@@ -68,6 +69,8 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
   poi `python3 -m http.server 8766 --directory dist` in background e
   `python3 tools/shot.py 1280 720 "js…" "~ms" "@cattura.png" "?espressione"`.
   Le catture vanno guardate: molti problemi sono solo visivi.
+  Controller: `python3 tools/pad-t.py` (pad Xbox finto: menu, Garage, Officina, Impostazioni, campionato, pista, pausa; deve finire con TUTTO OK).
+  Le variabili della pagina (TRK, CS, chEl…) si leggono con `__EV('espressione')`, aggiunto da mk_test.py.
   `PW_CHROMIUM=<chromium>` per usare il browser preinstallato.
 
 ## Cose da sapere (errori già fatti)

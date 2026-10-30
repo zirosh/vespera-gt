@@ -720,6 +720,38 @@ html.cs-on .g-info .v-tire,html.cs-on .g-info .v-aero{display:none}
   .cs-go small{display:none}
 }
 
+/* anteprima del circuito nella schermata Gara veloce (track-b20) */
+.cs-left .cs-prev{margin-bottom:10px;padding:14px 18px 12px}
+.cs-prev-k{font:700 11px "Saira",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--gm-acc2,#36d1ff)}
+.cs-prev-n{font:800 italic 22px/1.05 "Saira Condensed",sans-serif;text-transform:uppercase;color:#fff;margin:2px 0 6px}
+.cs-prev canvas{display:block;width:100%;height:auto;aspect-ratio:640/300;max-height:170px;object-fit:contain}
+.cs-prev-d{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 10px;margin:8px 0 0}
+.cs-prev-d div.w{grid-column:1/-1}
+.cs-prev-d dt{font:600 10px "Saira",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#8d98a3}
+.cs-prev-d dd{margin:1px 0 0;font:700 italic 18px "Saira Condensed",sans-serif;color:#eef2f5}
+@media (max-height:900px){.cs[data-s="race"] .cs-left .readout{display:none}.cs-prev canvas{max-height:130px}}
+
+/* riepilogo di fine gara (track-b20) */
+#thRace .tr-me{margin:12px 0 4px}
+.tr-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tr-tiles div{background:rgba(255,255,255,.05);border-left:3px solid var(--gm-acc2,#36d1ff);padding:8px 10px;min-width:0}
+.tr-tiles small{display:block;font:600 10px "Saira",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#8d98a3}
+.tr-tiles b{display:block;font:800 italic 22px/1.1 "Saira Condensed",sans-serif;color:#fff;margin-top:2px;white-space:nowrap}
+.tr-tiles span{display:block;font:500 11px/1.25 "Saira",sans-serif;color:#b9c3cc;margin-top:2px}
+.tr-laps{margin-top:12px}
+.tr-laps>small{font:600 10px "Saira",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#8d98a3}
+.tr-bars{display:flex;align-items:flex-end;gap:2px;height:96px;margin-top:6px;border-bottom:1px solid rgba(255,255,255,.18)}
+.tr-bars div{flex:1;max-width:46px;height:100%;padding-top:14px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative;cursor:default}
+.tr-bars i{display:block;width:62%;background:var(--gm-acc2,#36d1ff);border-radius:4px 4px 0 0;opacity:.85}
+.tr-bars div:hover i{opacity:1}
+.tr-bars div.best i{height:2px!important;width:80%;background:#fff;border-radius:1px}
+.tr-bars div.inv i{background:repeating-linear-gradient(135deg,#36d1ff 0 3px,transparent 3px 6px)}
+.tr-bars em{order:-1;font:600 10px "Saira",sans-serif;font-style:normal;color:#b9c3cc;margin-bottom:3px;white-space:nowrap}
+.tr-bars div.best em{color:#fff}
+.tr-bars u{position:absolute;bottom:-17px;text-decoration:none;font:600 10px "Saira",sans-serif;color:#8d98a3}
+.tr-laps{padding-bottom:16px}
+@media (max-width:720px){.tr-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 @media (max-width:720px){
   .panel{top:auto;bottom:10px;right:10px;left:10px;transform:none;width:auto;max-height:46%;padding:10px 14px 12px}
   .chips{grid-template-columns:repeat(7,minmax(0,34px));justify-content:space-between}
@@ -6166,7 +6198,7 @@ function trkPadFrame(dt){
 /* fuori dalla pista: Menu sul pad scende in pista */
 /* fuori dalla pista il pad comanda anche il garage: croce o levetta per spostarsi fra i comandi visibili, A conferma,
    croce a sinistra e a destra cambia i cursori, LB e RB cambiano scheda, B torna indietro, Menu scende in pista */
-function trkPadIdle(){const L=trkPadList(),p=L[0];document.documentElement.classList.toggle('pad',!!p);if(!p)return;
+function trkPadIdle(){const L=trkPadList(),p=L[0];document.documentElement.classList.toggle('pad',!!p);trkPadPanel();if(!p)return;
   const was=i=>!!PADS.idlePrev[i],hit=i=>padOn(p,i)&&!was(i),now=performance.now();
   if(hit(PAD_B.MENU)&&busy.hidden)trkStart();
   else if(busy.hidden){
@@ -7586,6 +7618,54 @@ function trkSuspUI(){
   show();
 }
 if(typeof document!=='undefined')trkSuspUI();
+/* =========================================================
+   Interfaccia, seconda passata: anteprima grande del circuito nella schermata Gara veloce
+   (tracciato colorato per quota, numero di curve, lunghezza, dislivello, record personale, meteo e ora)
+   e riepilogo di fine gara (posizioni guadagnate, giro migliore contro il giro ideale, velocità massima,
+   danni, distacco di ogni giro dal migliore)
+   ========================================================= */
+/* ---------- anteprima del circuito ---------- */
+const RP={id:-1,el:null,cv:null};
+function trkRacePreview(){
+  const left=document.querySelector('#cs .cs-scr[data-s="race"] .cs-left');if(!left||RP.el)return;
+  const w=document.createElement('div');w.className='group cs-prev';
+  w.innerHTML=`<div class="cs-prev-k">Circuito</div><div class="cs-prev-n"></div><canvas width="640" height="300" role="img"></canvas><dl class="cs-prev-d"></dl>`;
+  left.prepend(w);RP.el=w;RP.cv=w.querySelector('canvas');
+  setInterval(trkRacePreviewUpd,500);trkRacePreviewUpd();
+}
+function trkRacePreviewUpd(){
+  if(!RP.el||RP.el.offsetParent===null)return;const id=TRK.trackId,d=TRK_DEFS[id]||TRK_DEFS[0],key=id+'|'+TRK.tod+'|'+TRK.weather+'|'+JSON.stringify(TRK.myBest||{}).length;
+  if(RP.id===key)return;RP.id=key;const I=trkDefInfo(d),cv=RP.cv;trkDrawPreview(cv,d);
+  RP.el.querySelector('.cs-prev-n').textContent=d.name||d.short;cv.setAttribute('aria-label',`Tracciato di ${d.name||d.short}`);
+  const pb=Object.entries(TRK.myBest||{}).filter(([k])=>k.startsWith(id+'|')).map(([,v])=>v.t).sort((a,b)=>a-b)[0];
+  const tod={day:'giorno',sunset:'tramonto',night:'notte',dawn:'alba'}[TRK.tod]||TRK.tod||'giorno',wx=(TRK_WX[TRK.weather]||{}).n||'';
+  RP.el.querySelector('.cs-prev-d').innerHTML=`<div><dt>Lunghezza</dt><dd>${(I.L/1000).toFixed(2).replace('.',',')} km</dd></div><div><dt>Curve</dt><dd>${(d.corners||[]).length}</dd></div>
+    <div><dt>Dislivello</dt><dd>${Math.round(I.dh)} m</dd></div><div><dt>Tuo record</dt><dd>${pb?fmtLap(pb):'—'}</dd></div><div class="w"><dt>Condizioni</dt><dd>${wx}${wx?', ':''}${tod}</dd></div>`;
+}
+if(typeof document!=='undefined'&&document.getElementById('cs'))trkRacePreview();
+
+/* ---------- dati della gara per il riepilogo ---------- */
+{const f=trkRaceSetup;trkRaceSetup=function(){f();for(const P of TRK.cars){P.rs={grid:P.pos||1,laps:[],vmax:0,dmg:0};}};}
+{const f=trkLap;trkLap=function(P,a,b){const L=P.lap,n0=L.n,last=L.last;f(P,a,b);
+  if(P.rs&&TRK.race.state!=='off'&&L.n!==n0&&L.last!=null&&L.last!==last)P.rs.laps.push({t:L.last,ok:L.lastValid!==false});};}
+{const f=trkFrame;trkFrame=function(dt){f(dt);if(!TRK.on||TRK.replay.on||TRK.race.state!=='run')return;
+  for(const P of TRK.cars){const R=P.rs;if(!R)continue;R.vmax=Math.max(R.vmax,P.kmh||0);const D=P.dmg;if(D)R.dmg=Math.max(R.dmg,D.fw||0,D.rw||0,...(D.s||[0]));}};}
+
+/* ---------- riepilogo di fine gara ---------- */
+{const f=trkRaceEnd;trkRaceEnd=function(){f();
+  const el=document.getElementById('thRace'),me=TRK.p[0],R=me&&me.rs;if(!el||!R||TRK.split)return;
+  const pos=me.pos||1,gain=R.grid-pos,best=me.lap.best,ideal=me.sim&&me.sim.lap;
+  const tiles=[['Posizione',`${R.grid}° → ${pos}°`,gain>0?`${gain} ${gain===1?'posizione guadagnata':'posizioni guadagnate'}`:gain<0?`${-gain} ${gain===-1?'posizione persa':'posizioni perse'}`:'stessa posizione'],
+    ['Giro migliore',best!=null?fmtLap(best):'—',best!=null&&ideal?`${best>=ideal?'+':'−'}${dec(Math.abs(best-ideal),2)} s dal giro ideale`:''],
+    ['Velocità massima',`${Math.round(R.vmax)} km/h`,''],
+    ['Danni',R.dmg>0.02?`${Math.round(R.dmg*100)} %`:'nessuno',me.stops?`${me.stops} ${me.stops===1?'sosta':'soste'} ai box`:'']];
+  const box=document.createElement('div');box.className='tr-me';
+  box.innerHTML=`<div class="tr-tiles">${tiles.map(([k,v,s])=>`<div><small>${k}</small><b>${v}</b>${s?`<span>${s}</span>`:''}</div>`).join('')}</div>`;
+  /* distacco di ogni giro dal giro migliore: barre che partono da zero (il giro migliore è il segno a zero) */
+  const L=R.laps;if(L.length>1){const b0=Math.min(...L.map(l=>l.t)),mx=Math.max(1,...L.map(l=>l.t-b0));
+    box.insertAdjacentHTML('beforeend',`<div class="tr-laps"><small>Distacco dal tuo giro migliore, giro per giro${L.some(l=>!l.ok)?' · a righe i giri non validi':''}</small><div class="tr-bars" role="list">${L.map((l,k)=>{const d=l.t-b0,h=d<0.005?0:Math.max(4,d/mx*80);
+      return `<div role="listitem" class="${d<0.005?'best':''}${l.ok?'':' inv'}" title="Giro ${k+1}: ${fmtLap(l.t)}${d<0.005?' (migliore)':` (+${dec(d,2)} s)`}${l.ok?'':', non valido'}"><i style="height:${h}%"></i><em>${d<0.005?'migliore':'+'+dec(d,1)}</em><u>${k+1}</u></div>`;}).join('')}</div></div>`);}
+  const tab=el.querySelector('.tr-tab');(tab||el.querySelector('dl')).after(box);};}
 
 /* viste */
 let camTween=null,inside=false;

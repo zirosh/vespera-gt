@@ -80,7 +80,7 @@ function trkPadFrame(dt){
 /* fuori dalla pista: Menu sul pad scende in pista */
 /* fuori dalla pista il pad comanda anche il garage: croce o levetta per spostarsi fra i comandi visibili, A conferma,
    croce a sinistra e a destra cambia i cursori, LB e RB cambiano scheda, B torna indietro, Menu scende in pista */
-function trkPadIdle(){const L=trkPadList(),p=L[0];document.documentElement.classList.toggle('pad',!!p);if(!p)return;
+function trkPadIdle(){const L=trkPadList(),p=L[0];document.documentElement.classList.toggle('pad',!!p);trkPadPanel();if(!p)return;
   const was=i=>!!PADS.idlePrev[i],hit=i=>padOn(p,i)&&!was(i),now=performance.now();
   if(hit(PAD_B.MENU)&&busy.hidden)trkStart();
   else if(busy.hidden){

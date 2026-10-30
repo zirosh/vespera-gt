@@ -88,3 +88,35 @@ html.cs-on .g-info .v-tire,html.cs-on .g-info .v-aero{display:none}
   .cs-go span{font-size:24px}
   .cs-go small{display:none}
 }
+
+/* anteprima del circuito nella schermata Gara veloce (track-b20) */
+.cs-left .cs-prev{margin-bottom:10px;padding:14px 18px 12px}
+.cs-prev-k{font:700 11px "Saira",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--gm-acc2,#36d1ff)}
+.cs-prev-n{font:800 italic 22px/1.05 "Saira Condensed",sans-serif;text-transform:uppercase;color:#fff;margin:2px 0 6px}
+.cs-prev canvas{display:block;width:100%;height:auto;aspect-ratio:640/300;max-height:170px;object-fit:contain}
+.cs-prev-d{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 10px;margin:8px 0 0}
+.cs-prev-d div.w{grid-column:1/-1}
+.cs-prev-d dt{font:600 10px "Saira",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#8d98a3}
+.cs-prev-d dd{margin:1px 0 0;font:700 italic 18px "Saira Condensed",sans-serif;color:#eef2f5}
+@media (max-height:900px){.cs[data-s="race"] .cs-left .readout{display:none}.cs-prev canvas{max-height:130px}}
+
+/* riepilogo di fine gara (track-b20) */
+#thRace .tr-me{margin:12px 0 4px}
+.tr-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tr-tiles div{background:rgba(255,255,255,.05);border-left:3px solid var(--gm-acc2,#36d1ff);padding:8px 10px;min-width:0}
+.tr-tiles small{display:block;font:600 10px "Saira",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#8d98a3}
+.tr-tiles b{display:block;font:800 italic 22px/1.1 "Saira Condensed",sans-serif;color:#fff;margin-top:2px;white-space:nowrap}
+.tr-tiles span{display:block;font:500 11px/1.25 "Saira",sans-serif;color:#b9c3cc;margin-top:2px}
+.tr-laps{margin-top:12px}
+.tr-laps>small{font:600 10px "Saira",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#8d98a3}
+.tr-bars{display:flex;align-items:flex-end;gap:2px;height:96px;margin-top:6px;border-bottom:1px solid rgba(255,255,255,.18)}
+.tr-bars div{flex:1;max-width:46px;height:100%;padding-top:14px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative;cursor:default}
+.tr-bars i{display:block;width:62%;background:var(--gm-acc2,#36d1ff);border-radius:4px 4px 0 0;opacity:.85}
+.tr-bars div:hover i{opacity:1}
+.tr-bars div.best i{height:2px!important;width:80%;background:#fff;border-radius:1px}
+.tr-bars div.inv i{background:repeating-linear-gradient(135deg,#36d1ff 0 3px,transparent 3px 6px)}
+.tr-bars em{order:-1;font:600 10px "Saira",sans-serif;font-style:normal;color:#b9c3cc;margin-bottom:3px;white-space:nowrap}
+.tr-bars div.best em{color:#fff}
+.tr-bars u{position:absolute;bottom:-17px;text-decoration:none;font:600 10px "Saira",sans-serif;color:#8d98a3}
+.tr-laps{padding-bottom:16px}
+@media (max-width:720px){.tr-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
