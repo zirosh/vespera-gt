@@ -25,7 +25,8 @@ const TRK_FACADE=[0xf1e3c4,0xe8c690,0xd9a273,0xefd9b0,0xe3b98f,0xd8d2c4,0xf3eadb
 function trkCityBuild(){
   const T=TRK.T,N=T.N,hw=T.w/2,D=TRKDEF,tw=TRK.tw;
   /* muri: cemento alto un metro all'esterno della carreggiata, con la rete sopra (lungo il rettilineo dei box il muretto c'è già) */
-  const wall=trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial({color:0xc8cacc,map:trkConcreteTex().map,roughness:0.9,side:THREE.DoubleSide,envMapIntensity:0.3}),3,0.1));
+  const wC=trkPhotoTex('ph-wall-color',true),wN=trkPhotoTex('ph-wall-normal',false);
+  const wall=trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial(Object.assign({color:wC?0xe6e6e6:0xc8cacc,map:wC||trkConcreteTex().map,roughness:0.9,side:THREE.DoubleSide,envMapIntensity:0.3},wN?{normalMap:wN}:{})),3,0.1));
   const fen=new THREE.MeshStandardMaterial({map:trkMeshFenceTex(),transparent:true,alphaTest:0.35,side:THREE.DoubleSide,metalness:0.5,roughness:0.5});fen.map.repeat.set(1,1);
   {const Pd=TRK.pit;
    trkRibbon(Pd.qB+32-N,Pd.qIn+28,i=>TRK.bar[0][i],0,0,4,wall,1.05);trkRibbon(0,N,i=>-TRK.bar[1][i],0,0,4,wall,1.05);
@@ -44,13 +45,17 @@ function trkCityBuild(){
   /* seconda fila e quartieri: più alti man mano che ci si allontana */
   for(let k=0,tries=0;k<520&&tries<9000;tries++){const X=-1000+R()*2300,Y=-500+R()*1700,W=16+R()*22,Dp=16+R()*22,r=Math.hypot(W,Dp)/2*0.8;
     if(!clear(X,Y,r))continue;const d=trkDistTrack(X,Y,6);blds.push({X,Y,W,D:Dp,H:14+R()*(18+Math.min(60,d*0.08)),a:R()<0.7?Math.round(R()*2)*Math.PI/2:R()*Math.PI,r});k++;}
-  const F=trkFacadeTex();
-  const facade=trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial({color:0xffffff,map:F.map,emissiveMap:F.lit,emissive:0xffc77a,emissiveIntensity:0,roughness:0.85,envMapIntensity:0.35}),12,0.08));
-  const roof=new THREE.MeshLambertMaterial({color:0x8a8178});
+  /* facciate: quattro fotografie di ambientCG con le finestre accese di notte (mappa di emissione), o la facciata generata se mancano */
+  const roof=new THREE.MeshLambertMaterial({color:0x8a8178}),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),ps=new THREE.Vector3(),sc=new THREE.Vector3(),c=new THREE.Color(),up=new THREE.Vector3(0,1,0);
   const g=new THREE.BoxGeometry(1,1,1);g.translate(0,0.5,0);
-  const M=new THREE.InstancedMesh(g,[facade,facade,roof,roof,facade,facade],blds.length),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),ps=new THREE.Vector3(),sc=new THREE.Vector3(),c=new THREE.Color(),up=new THREE.Vector3(0,1,0);
-  blds.forEach((b,k)=>{ps.set(b.X,trkGroundH(b.X,b.Y)-0.3,-b.Y);q.setFromAxisAngle(up,b.a);sc.set(b.W,b.H,b.D);m4.compose(ps,q,sc);M.setMatrixAt(k,m4);M.setColorAt(k,c.setHex(TRK_FACADE[k%TRK_FACADE.length]));});
-  M.instanceColor.needsUpdate=true;M.castShadow=M.receiveShadow=true;M.frustumCulled=false;tw.add(M);TRK.cityFacade=facade;
+  const photos=['facade007','facade008','facade010','facade017'].filter(n=>TRK_PHOTO['acg-'+n+'-color']);
+  const mats=photos.length?photos.map(n=>{const e=trkPhotoTex('acg-'+n+'-emission',true);return trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial(Object.assign({color:0xffffff,map:trkPhotoTex('acg-'+n+'-color',true),roughness:0.6,metalness:0.1,envMapIntensity:0.6,emissiveIntensity:0},e?{emissiveMap:e,emissive:0xffffff}:{})),10,0.06));})
+    :[(()=>{const F=trkFacadeTex();return trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial({color:0xffffff,map:F.map,emissiveMap:F.lit,emissive:0xffc77a,emissiveIntensity:0,roughness:0.85,envMapIntensity:0.35}),12,0.08));})()];
+  TRK.cityFacades=mats;
+  mats.forEach((mat,j)=>{const list=blds.filter((b,k)=>k%mats.length===j);if(!list.length)return;
+    const M=new THREE.InstancedMesh(g,[mat,mat,roof,roof,mat,mat],list.length);
+    list.forEach((b,k)=>{ps.set(b.X,trkGroundH(b.X,b.Y)-0.3,-b.Y);q.setFromAxisAngle(up,b.a);sc.set(b.W,b.H,b.D);m4.compose(ps,q,sc);M.setMatrixAt(k,m4);M.setColorAt(k,c.setHex(photos.length?0xffffff:TRK_FACADE[k%TRK_FACADE.length]));});
+    M.instanceColor.needsUpdate=true;M.castShadow=M.receiveShadow=true;M.frustumCulled=false;tw.add(M);});
   /* il mare oltre il lungomare */
   if(D.sea){const y0=D.sea,sh=new THREE.Shape([new THREE.Vector2(-2400,y0),new THREE.Vector2(2400,y0),new THREE.Vector2(2400,3200),new THREE.Vector2(-2400,3200)]);
    const w=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshStandardMaterial({color:0x1d4f6b,roughness:0.12,metalness:0.1,envMapIntensity:1.2}));
@@ -76,4 +81,4 @@ function trkCityBuild(){
 {const f=trkBuildWorld;trkBuildWorld=function(){const was=TRK.built;f();if(!was&&TRKDEF.urban)trkCityBuild();};}
 /* di notte si accendono finestre e lampioni */
 {const f=trkAtmo;trkAtmo=function(){f();if(!TRK.built||!TRKDEF.urban)return;const n=TRK.tod==='night',s=TRK.tod==='sunset';
-  if(TRK.cityFacade)TRK.cityFacade.emissiveIntensity=n?1.1:s?0.35:0;if(TRK.cityLamp)TRK.cityLamp.emissiveIntensity=n?3:s?1:0;};}
+  if(TRK.cityFacades)for(const m of TRK.cityFacades)m.emissiveIntensity=n?1.1:s?0.35:0;if(TRK.cityLamp)TRK.cityLamp.emissiveIntensity=n?3:s?1:0;};}

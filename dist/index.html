@@ -1107,6 +1107,7 @@ if(typeof WorkerGlobalScope!=='undefined'&&self instanceof WorkerGlobalScope)sel
 <script src="lib/three.min.js"></script>
 <script src="lib/OrbitControls.js"></script>
 <script src="lib/RGBELoader.js"></script>
+<script src="lib/GLTFLoader.js"></script>
 <script>
 (function(){
 "use strict";
@@ -4159,9 +4160,9 @@ function trkBuildWorld(){
    const sun=new THREE.Mesh(new THREE.SphereGeometry(4,16,8),new THREE.MeshBasicMaterial({color:new THREE.Color(0xfff2d8).multiplyScalar(5)}));sun.position.set(-20,34,-15);es.add(sun);
    trkEnv=pmrem.fromScene(es,0.02).texture;}
   /* prato con le strisce del tosaerba */
-  const grassTex=TRKDEF.urban?trkConcreteTex().map:trkGrassTex().map;
+  const grassTex=TRKDEF.urban?(trkPhotoTex('ph-pavement-color',true)||trkConcreteTex().map):trkGrassTex().map;
   /* prato a riquadri e spinto indietro nella profondità: così non litiga mai con l'asfalto che gli sta 5 cm sopra */
-  const grassMat=trkNightPatch(new THREE.MeshLambertMaterial({map:grassTex,vertexColors:true,polygonOffset:true,polygonOffsetFactor:4,polygonOffsetUnits:8}));TRK.grassMat=grassMat;if(TRKDEF.urban)grassMat.color.setHex(0x46494d);grassMat.userData.wuv=6;grassMat.userData.mac=0.12;
+  const grassMat=trkNightPatch(new THREE.MeshLambertMaterial({map:grassTex,vertexColors:true,polygonOffset:true,polygonOffsetFactor:4,polygonOffsetUnits:8}));TRK.grassMat=grassMat;if(TRKDEF.urban)grassMat.color.setHex(TRK_PHOTO['ph-pavement-color']?0x9a9a9a:0x46494d);grassMat.userData.wuv=6;grassMat.userData.mac=0.12;
   /* terreno con le colline attorno alla pista (celle da 12 m) e una pianura piatta oltre */
   {const g=new THREE.PlaneGeometry(3400,3400,280,280);g.rotateX(-Math.PI/2);const p=g.attributes.position,uv=g.attributes.uv;
    for(let k=0;k<p.count;k++){const X=p.getX(k)+110,Y=-(p.getZ(k)-430);p.setXYZ(k,X,trkGroundH(X,Y),-Y);uv.setXY(k,uv.getX(k)*3400/9000,uv.getY(k)*3400/9000);}
@@ -7060,7 +7061,7 @@ if(typeof toggle==='function'&&document.getElementById('trkDmg')){toggle('trkDmg
    della stessa scansione, scuriti e senza colore, a scala più piccola. Le immagini sono dentro la pagina (data URI),
    così il gioco resta un file unico. Se mancano si torna alle texture procedurali
    ========================================================= */
-const TRK_PHOTO={"gravelC": "assets/gravel-color.jpg", "gravelN": "assets/gravel-normal.jpg", "grassC": "assets/grass-color.jpg", "asphC": "assets/asphalt-color.jpg"};
+const TRK_PHOTO={"gravelC": "assets/gravel-color.jpg", "gravelN": "assets/gravel-normal.jpg", "grassC": "assets/grass-color.jpg", "asphC": "assets/asphalt-color.jpg", "acg-facade007-color": "assets/acg-facade007-color.jpg", "acg-facade007-emission": "assets/acg-facade007-emission.jpg", "acg-facade008-color": "assets/acg-facade008-color.jpg", "acg-facade008-emission": "assets/acg-facade008-emission.jpg", "acg-facade010-color": "assets/acg-facade010-color.jpg", "acg-facade010-emission": "assets/acg-facade010-emission.jpg", "acg-facade017-color": "assets/acg-facade017-color.jpg", "acg-facade017-emission": "assets/acg-facade017-emission.jpg", "ph-asphalt-color": "assets/ph-asphalt-color.jpg", "ph-asphalt-normal": "assets/ph-asphalt-normal.jpg", "ph-asphalt-rough": "assets/ph-asphalt-rough.jpg", "ph-pavement-color": "assets/ph-pavement-color.jpg", "ph-pavement-normal": "assets/ph-pavement-normal.jpg", "ph-pavement-rough": "assets/ph-pavement-rough.jpg", "ph-wall-color": "assets/ph-wall-color.jpg", "ph-wall-normal": "assets/ph-wall-normal.jpg", "ph-wall-rough": "assets/ph-wall-rough.jpg"};
 function trkPhotoTex(k,srgb){
   if(!TRK_PHOTO[k])return null;const t=new THREE.Texture(),im=new Image();
   im.onload=()=>{t.image=im;t.needsUpdate=true;};im.src=TRK_PHOTO[k];
@@ -7422,7 +7423,8 @@ const TRK_FACADE=[0xf1e3c4,0xe8c690,0xd9a273,0xefd9b0,0xe3b98f,0xd8d2c4,0xf3eadb
 function trkCityBuild(){
   const T=TRK.T,N=T.N,hw=T.w/2,D=TRKDEF,tw=TRK.tw;
   /* muri: cemento alto un metro all'esterno della carreggiata, con la rete sopra (lungo il rettilineo dei box il muretto c'è già) */
-  const wall=trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial({color:0xc8cacc,map:trkConcreteTex().map,roughness:0.9,side:THREE.DoubleSide,envMapIntensity:0.3}),3,0.1));
+  const wC=trkPhotoTex('ph-wall-color',true),wN=trkPhotoTex('ph-wall-normal',false);
+  const wall=trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial(Object.assign({color:wC?0xe6e6e6:0xc8cacc,map:wC||trkConcreteTex().map,roughness:0.9,side:THREE.DoubleSide,envMapIntensity:0.3},wN?{normalMap:wN}:{})),3,0.1));
   const fen=new THREE.MeshStandardMaterial({map:trkMeshFenceTex(),transparent:true,alphaTest:0.35,side:THREE.DoubleSide,metalness:0.5,roughness:0.5});fen.map.repeat.set(1,1);
   {const Pd=TRK.pit;
    trkRibbon(Pd.qB+32-N,Pd.qIn+28,i=>TRK.bar[0][i],0,0,4,wall,1.05);trkRibbon(0,N,i=>-TRK.bar[1][i],0,0,4,wall,1.05);
@@ -7441,13 +7443,17 @@ function trkCityBuild(){
   /* seconda fila e quartieri: più alti man mano che ci si allontana */
   for(let k=0,tries=0;k<520&&tries<9000;tries++){const X=-1000+R()*2300,Y=-500+R()*1700,W=16+R()*22,Dp=16+R()*22,r=Math.hypot(W,Dp)/2*0.8;
     if(!clear(X,Y,r))continue;const d=trkDistTrack(X,Y,6);blds.push({X,Y,W,D:Dp,H:14+R()*(18+Math.min(60,d*0.08)),a:R()<0.7?Math.round(R()*2)*Math.PI/2:R()*Math.PI,r});k++;}
-  const F=trkFacadeTex();
-  const facade=trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial({color:0xffffff,map:F.map,emissiveMap:F.lit,emissive:0xffc77a,emissiveIntensity:0,roughness:0.85,envMapIntensity:0.35}),12,0.08));
-  const roof=new THREE.MeshLambertMaterial({color:0x8a8178});
+  /* facciate: quattro fotografie di ambientCG con le finestre accese di notte (mappa di emissione), o la facciata generata se mancano */
+  const roof=new THREE.MeshLambertMaterial({color:0x8a8178}),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),ps=new THREE.Vector3(),sc=new THREE.Vector3(),c=new THREE.Color(),up=new THREE.Vector3(0,1,0);
   const g=new THREE.BoxGeometry(1,1,1);g.translate(0,0.5,0);
-  const M=new THREE.InstancedMesh(g,[facade,facade,roof,roof,facade,facade],blds.length),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),ps=new THREE.Vector3(),sc=new THREE.Vector3(),c=new THREE.Color(),up=new THREE.Vector3(0,1,0);
-  blds.forEach((b,k)=>{ps.set(b.X,trkGroundH(b.X,b.Y)-0.3,-b.Y);q.setFromAxisAngle(up,b.a);sc.set(b.W,b.H,b.D);m4.compose(ps,q,sc);M.setMatrixAt(k,m4);M.setColorAt(k,c.setHex(TRK_FACADE[k%TRK_FACADE.length]));});
-  M.instanceColor.needsUpdate=true;M.castShadow=M.receiveShadow=true;M.frustumCulled=false;tw.add(M);TRK.cityFacade=facade;
+  const photos=['facade007','facade008','facade010','facade017'].filter(n=>TRK_PHOTO['acg-'+n+'-color']);
+  const mats=photos.length?photos.map(n=>{const e=trkPhotoTex('acg-'+n+'-emission',true);return trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial(Object.assign({color:0xffffff,map:trkPhotoTex('acg-'+n+'-color',true),roughness:0.6,metalness:0.1,envMapIntensity:0.6,emissiveIntensity:0},e?{emissiveMap:e,emissive:0xffffff}:{})),10,0.06));})
+    :[(()=>{const F=trkFacadeTex();return trkNightPatch(trkWorldMap(new THREE.MeshStandardMaterial({color:0xffffff,map:F.map,emissiveMap:F.lit,emissive:0xffc77a,emissiveIntensity:0,roughness:0.85,envMapIntensity:0.35}),12,0.08));})()];
+  TRK.cityFacades=mats;
+  mats.forEach((mat,j)=>{const list=blds.filter((b,k)=>k%mats.length===j);if(!list.length)return;
+    const M=new THREE.InstancedMesh(g,[mat,mat,roof,roof,mat,mat],list.length);
+    list.forEach((b,k)=>{ps.set(b.X,trkGroundH(b.X,b.Y)-0.3,-b.Y);q.setFromAxisAngle(up,b.a);sc.set(b.W,b.H,b.D);m4.compose(ps,q,sc);M.setMatrixAt(k,m4);M.setColorAt(k,c.setHex(photos.length?0xffffff:TRK_FACADE[k%TRK_FACADE.length]));});
+    M.instanceColor.needsUpdate=true;M.castShadow=M.receiveShadow=true;M.frustumCulled=false;tw.add(M);});
   /* il mare oltre il lungomare */
   if(D.sea){const y0=D.sea,sh=new THREE.Shape([new THREE.Vector2(-2400,y0),new THREE.Vector2(2400,y0),new THREE.Vector2(2400,3200),new THREE.Vector2(-2400,3200)]);
    const w=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshStandardMaterial({color:0x1d4f6b,roughness:0.12,metalness:0.1,envMapIntensity:1.2}));
@@ -7473,7 +7479,51 @@ function trkCityBuild(){
 {const f=trkBuildWorld;trkBuildWorld=function(){const was=TRK.built;f();if(!was&&TRKDEF.urban)trkCityBuild();};}
 /* di notte si accendono finestre e lampioni */
 {const f=trkAtmo;trkAtmo=function(){f();if(!TRK.built||!TRKDEF.urban)return;const n=TRK.tod==='night',s=TRK.tod==='sunset';
-  if(TRK.cityFacade)TRK.cityFacade.emissiveIntensity=n?1.1:s?0.35:0;if(TRK.cityLamp)TRK.cityLamp.emissiveIntensity=n?3:s?1:0;};}
+  if(TRK.cityFacades)for(const m of TRK.cityFacades)m.emissiveIntensity=n?1.1:s?0.35:0;if(TRK.cityLamp)TRK.cityLamp.emissiveIntensity=n?3:s?1:0;};}
+/* =========================================================
+   Materiali e oggetti CC0 di Poly Haven (tools/fetch_assets.py, licenze in src/assets/LEGGIMI.md):
+   asfalto da pista fotografico (colore e rilievo) su tutti i circuiti; panchine e fioriere lungo i marciapiedi del cittadino,
+   barili dietro i box. I modelli glTF arrivano dopo la costruzione del mondo e vengono istanziati (un draw call per pezzo)
+   ========================================================= */
+{const f=trkAsphaltTex;trkAsphaltTex=function(){if(TXL.asphPH)return TXL.asphPH;
+  const m=trkPhotoTex('ph-asphalt-color',true),n=trkPhotoTex('ph-asphalt-normal',false);return TXL.asphPH=m&&n?{map:m,normal:n,ph:true}:f();};}
+/* scala: un quadro di asfalto ogni 3 m, rilievo un po' più marcato degli inerti generati */
+{const f=trkBuildWorld;trkBuildWorld=function(){const was=TRK.built;f();if(was)return;
+  if(TXL.asphPH&&TXL.asphPH.ph&&TRK.asphalt){TRK.asphalt.userData.wuv=3;TRK.asphalt.normalScale.set(0.7,0.7);}
+  trkPropsPlace();};}
+const PROPS={cache:{},loader:null};
+/* un modello glTF diventa una lista di pezzi {geometria, materiale, matrice nel modello}, caricato una volta sola */
+function trkPropLoad(name,cb){
+  if(!THREE.GLTFLoader)return;const C=PROPS.cache[name];if(C){if(C.parts)cb(C.parts);else C.wait.push(cb);return;}
+  const E=PROPS.cache[name]={parts:null,wait:[cb]};PROPS.loader=PROPS.loader||new THREE.GLTFLoader();
+  PROPS.loader.load('assets/models/'+name+'.gltf',g=>{const parts=[];g.scene.updateMatrixWorld(true);
+    g.scene.traverse(o=>{if(o.isMesh)parts.push({geo:o.geometry,mat:o.material,m:o.matrixWorld.clone()});});
+    E.parts=parts;E.wait.forEach(f=>f(parts));E.wait=[];},undefined,()=>{});
+}
+/* posa: lista di [X, Y (piano della pista), quota, rotazione, scala] → istanze di ogni pezzo nel gruppo del circuito */
+function trkPropInstances(name,list,tw){
+  if(!list.length)return;trkPropLoad(name,parts=>{if(TRK.tw!==tw)return;
+    const M=new THREE.Matrix4(),q=new THREE.Quaternion(),ps=new THREE.Vector3(),sc=new THREE.Vector3(),up=new THREE.Vector3(0,1,0);
+    for(const p of parts){const I=new THREE.InstancedMesh(p.geo,p.mat,list.length);
+      list.forEach(([X,Y,h,a,s],k)=>{ps.set(X,h,-Y);q.setFromAxisAngle(up,a);sc.set(s,s,s);M.compose(ps,q,sc).multiply(p.m);I.setMatrixAt(k,M);});
+      I.castShadow=I.receiveShadow=true;I.frustumCulled=false;tw.add(I);}});
+}
+function trkPropsPlace(){
+  const T=TRK.T,N=T.N,tw=TRK.tw,R=trkRng(131);
+  /* cittadino: panchine rivolte alla strada e fioriere lungo i marciapiedi, dietro i muri */
+  if(TRKDEF.urban){const bench=[],plant=[];
+    for(let i=10;i<N;i+=26)for(const sg of [1,-1]){const s=sg>0?0:1;if(TRK.pitZone&&TRK.pitZone[i])continue;if(TRK.tunnel&&i>=TRK.tunnel[0]&&i<=TRK.tunnel[1])continue;
+      const o=TRK.bar[s][i]+3.2,X=T.X[i]+T.nx[i]*sg*o,Y=T.Y[i]+T.ny[i]*sg*o,a=Math.atan2(T.ty[i],T.tx[i]);
+      if(TRKDEF.sea&&Y>TRKDEF.sea)continue;
+      if(R()<0.5)bench.push([X,Y,T.h[i],a+(sg>0?Math.PI:0),1]);else plant.push([X,Y,T.h[i],a,1]);}
+    trkPropInstances('painted_wooden_bench',bench,tw);trkPropInstances('planter_box_01',plant,tw);}
+  /* box: barili e pneumatici di scorta dietro le piazzole */
+  if(TRK.pit){const Pd=TRK.pit,barrel=[],tyre=[];
+    for(const q of Pd.box){const i=((Math.round(q)%N)+N)%N,o=trkBarQ(q)+Pd.boxOff+6.5,X=T.X[i]+T.nx[i]*o,Y=T.Y[i]+T.ny[i]*o;
+      barrel.push([X+2,Y,T.h[i],R()*6.28,1]);barrel.push([X+2.7,Y+0.4,T.h[i],R()*6.28,1]);
+      for(let k=0;k<4;k++)tyre.push([X-2,Y-1+k*0.01,T.h[i]+k*0.24,R()*6.28,1]);}
+    trkPropInstances('barrel_03',barrel,tw);trkPropInstances('old_tyre',tyre,tw);}
+}
 
 /* viste */
 let camTween=null,inside=false;
