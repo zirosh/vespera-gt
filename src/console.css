@@ -50,6 +50,9 @@ html.pad .cs-item:focus{outline:none!important}
 .cs-go small{font:600 11px "Saira",sans-serif;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
 .cs-go:hover,.cs-go:focus{filter:brightness(1.12)}
 
+/* quattro circuiti affiancati nel pannello */
+html.gm .cs .trk-cards{grid-template-columns:repeat(4,1fr)}
+
 /* barra dei tasti in basso */
 .cs-keys{position:absolute;left:0;right:0;bottom:0;height:50px;display:flex;align-items:center;gap:22px;padding:0 clamp(16px,3vw,48px);pointer-events:auto;
   font:600 11px "Saira",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#8d98a3;background:linear-gradient(0deg,rgba(0,0,0,.65),rgba(0,0,0,0))}

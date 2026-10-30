@@ -214,7 +214,7 @@ function trkEngP(V,rpm){const x=rpm/7000,f=x<1?1-0.85*(1-x)*(1-x):Math.max(0,1-3
    Con le assistenze: controllo di trazione e ABS ruota per ruota sullo scorrimento, controllo di stabilità sull'imbardata
    ========================================================= */
 const TN_B=Math.tan(Math.PI/(2*TIRE.C)),APK_F=TN_B/TIRE.Bf,APK_R=TN_B/TIRE.Br;
-const _wF=new Float64Array(4),_wG=new Float64Array(4),_wD=new Float64Array(4),_wFx=new Float64Array(4),_wFy=new Float64Array(4),_wVl=new Float64Array(4),_wTa=new Float64Array(4),_wMu=new Float64Array(4),_wCr=new Float64Array(4);
+const _wBx=new Float64Array(4),_wBy=new Float64Array(4),_wF=new Float64Array(4),_wG=new Float64Array(4),_wD=new Float64Array(4),_wFx=new Float64Array(4),_wFy=new Float64Array(4),_wVl=new Float64Array(4),_wTa=new Float64Array(4),_wMu=new Float64Array(4),_wCr=new Float64Array(4);
 /* forza della gomma con scorrimento longitudinale k e tangente della deriva ta: un'unica curva sul modulo dello scorrimento normalizzato */
 function trkTireCS(G,k,ta,apk,out,j){const sx=k/KX_PEAK,sy=ta/apk,s=Math.hypot(sx,sy);if(s<1e-9){out[0]=0;out[1]=0;return;}
   const F=G*Math.sin(TIRE.C*Math.atan(TN_B*s));out[0]=F*sx/s;out[1]=-F*sy/s;}
@@ -248,10 +248,11 @@ function trkPhysics(P,h){
   const lamF=V.wf+0.03,dLat=m*c.ay*V.h/V.track,cp=Math.cos(c.psi),sp2=Math.sin(c.psi);
   P.wdist=(P.wdist||0)+Math.abs(c.vx)*h;if(!P.w)P.w=[c.vx,c.vx,c.vx,c.vx];if(!P.wa)P.wa=[0,0,0,0];if(!P.wsf)P.wsf=['asfalto','asfalto','asfalto','asfalto'];if(!P.absw)P.absw=[1,1,1,1];
   for(let k=0;k<4;k++){const fr=k<2,left=k%2===0,N=fr?L.Nf:L.Nr,dN=(fr?lamF:1-lamF)*dLat;
-    let Fz=clamp(N/2+(left?-dN:dN),0,N);
+    /* con la scocca rigida (Rapier) il carico di ogni ruota viene dalla sua molla */
+    let Fz=P.rb?P.rb.fz[k]:clamp(N/2+(left?-dN:dN),0,N);
     const xw=fr?a:-b,yw=left?tw:-tw,Xw=c.X+xw*cp-yw*sp2,Yw=c.Y+xw*sp2+yw*cp,dw=(Xw-T.X[i])*T.nx[i]+(Yw-T.Y[i])*T.ny[i];
     const sf=trkSurface(i,dw),S=TRK_SURF[sf];P.wsf[k]=sf;_wD[k]=dw;
-    if(sf==='cordolo')Fz*=1+0.16*Math.sin(P.wdist*6.3+k*1.7);else if(sf!=='asfalto')Fz*=1+0.1*Math.sin(P.wdist*9.1+k*2.3)*Math.min(1,Math.abs(c.vx)/10);
+    if(P.rb){}else if(sf==='cordolo')Fz*=1+0.16*Math.sin(P.wdist*6.3+k*1.7);else if(sf!=='asfalto')Fz*=1+0.1*Math.sin(P.wdist*9.1+k*2.3)*Math.min(1,Math.abs(c.vx)/10);
     _wF[k]=P.air?0:Fz;_wMu[k]=V.mu*S.mu*wmu*(fr?mf:mr*TIRE.rear)*(P.wgk?P.wgk[k]:1);_wCr[k]=S.crr;_wG[k]=trkWheelGrip(_wMu[k],_wF[k]);}
   /* velocità di ogni ruota nel suo piano (le anteriori sterzano, con un po' di Ackermann) */
   /* sotto 1,5 m/s l'auto si muove in modo cinematico (vedi sotto) e le derive delle gomme non sono vere: con lo sterzo tutto girato
@@ -297,7 +298,7 @@ function trkPhysics(P,h){
   for(let k=0;k<4;k++){const fr=k<2,left=k%2===0,xw=fr?a:-b,yw=left?tw:-tw,dk=fr?d*(1+(left?ack:-ack)):dR,vl=_wVl[k],kk=(P.w[k]-vl)/vref(k);
     trkTireCS(_wG[k]*capF,kk,_wTa[k],fr?APK_F:APK_R,_tf);const fx=_tf[0],fy=_tf[1],cd=Math.cos(dk),sd=Math.sin(dk);
     if(!P.ws)P.ws=[0,0,0,0];P.ws[k]=P.air?0:Math.hypot(kk/KX_PEAK,_wTa[k]/(fr?APK_F:APK_R));
-    const bx=fx*cd-fy*sd,by=fx*sd+fy*cd;Fx+=bx;Fy+=by;Mz+=xw*by-yw*bx;_wFx[k]=fx;_wFy[k]=fy;
+    const bx=fx*cd-fy*sd,by=fx*sd+fy*cd;Fx+=bx;Fy+=by;_wBx[k]=bx;_wBy[k]=by;Mz+=xw*by-yw*bx;_wFx[k]=fx;_wFy[k]=fy;
     const slipP=Math.abs(fy*vl*Math.min(0.6,Math.abs(_wTa[k])))+Math.abs(fx*(P.w[k]-vl))*0.5;if(fr)Pf+=slipP;else Pr+=slipP;
     if(!fr&&kk>0.25&&c.vx>1)spin=true;if(kk<-0.35&&c.vx>4)lock=true;if(fr)afS+=P.wa[k];else arS+=P.wa[k];}
   P.uf=(P.w[0]+P.w[1])/2;P.ur=(P.w[2]+P.w[3])/2;P.af=afS/2;P.ar=arS/2;P.spin=spin;P.lock=lock;P.fyr=_wFy[2]+_wFy[3];
@@ -308,16 +309,18 @@ function trkPhysics(P,h){
   if(assist&&c.vx>4&&!P.air){const rref=clamp(c.vx*Math.tan(d)/V.lwb,-aLim/c.vx,aLim/c.vx),ex=c.r-clamp(c.r,-Math.abs(rref)-0.06,Math.abs(rref)+0.06);
     const beta=Math.atan2(c.vy,c.vx),eb=beta-clamp(beta,-0.075,0.075);
     if(ex||eb){Mesp=-Izz*7*ex+Izz*30*eb;P.tcR=Math.min(P.tcR,Math.max(0.3,1-6*Math.abs(eb)-3*Math.abs(ex)));}}
+  if(P.rb)trkRbForces(P,L.A,Fres,Mesp);else{
   const dvx=(Fx-Fres)/m+c.r*c.vy-g*slope,dvy=Fy/m-c.r*c.vx,dr=(Mz+Mesp)/Izz;
   const vx0=c.vx;c.vx+=dvx*h;c.vy+=dvy*h;c.r+=dr*h;
   if(!rev&&vx0>0&&c.vx<0&&thr<0.05&&Math.abs(slope)<0.03){c.vx=0;P.w.fill(0);}
   if(rev&&c.vx>0&&vx0<=0)c.vx=0;
   const kb=c.vx>0?clamp((c.vx-1.5)/3,0,1):0;
-  if(kb<1){const rk=c.vx*Math.tan(d)/V.lwb;c.r=kb*c.r+(1-kb)*rk;c.vy*=kb;}
+  /* moto cinematico: l'auto ruota attorno a un punto sulla linea dell'asse posteriore, quindi il baricentro (a b metri) scivola di lato di r·b */
+  if(kb<1){const rk=c.vx*Math.tan(d)/V.lwb;c.r=kb*c.r+(1-kb)*rk;c.vy=kb*c.vy+(1-kb)*rk*b;}
   const axN=(Fx-Fres)/m,ayN=Fy/m;
   /* i trasferimenti di carico seguono le accelerazioni con il ritardo delle sospensioni */
   c.ax+=(axN-c.ax)*Math.min(1,h/0.1);c.ay+=(ayN-c.ay)*Math.min(1,h/0.13);
-  c.X+=(c.vx*cp-c.vy*sp2)*h;c.Y+=(c.vx*sp2+c.vy*cp)*h;c.psi+=c.r*h;
+  c.X+=(c.vx*cp-c.vy*sp2)*h;c.Y+=(c.vx*sp2+c.vy*cp)*h;c.psi+=c.r*h;}
   /* calore nelle gomme dalla potenza che si perde strisciando, raffreddamento dall'aria, usura */
   const av=Math.abs(c.vx);
   const amb=24-11*TRK.wet-(TRK.tod==='night'?5:0),kc=0.012*(1+0.9*TRK.wet)*(1+av/25);P.Tf+=h*(Pf/8700-kc*(P.Tf-amb));P.Tr+=h*(Pr/8700-kc*(P.Tr-amb));
@@ -406,6 +409,10 @@ function trkAIDrive(P,dt){
       else offT=P.aiOff;}
     else if(Math.abs(O.car.d-c.d)<2.5)offT=clamp(c.d>O.car.d?O.car.d+2.7:O.car.d-2.7,-hw+1.4,hw-1.4)-RL.e[bi];
     else offT=P.aiOff;}
+  /* auto lente o ferme più avanti sulla stessa linea (incidente, testacoda): guarda per tutto lo spazio di frenata e rallenta in tempo */
+  {const look=Math.min(160,c.vx*c.vx/14+20),myL=RL.e[bi]+P.aiOff;
+   for(const Q of TRK.cars){if(Q===P||Q.pit||Q.car.vx>c.vx*0.8)continue;let ds=(Q.car.i-bi+N)%N;if(ds>N/2)continue;ds*=T.ds;
+     if(ds<4||ds>look||Math.abs(Q.car.d-myL)>2.6)continue;vcap=Math.min(vcap,Math.sqrt(Math.max(0,Q.car.vx)**2+2*7*Math.max(0,ds-9)));}}
   /* difesa: con un'auto che arriva da dietro, prima della curva si sposta una volta sola sul lato da cui attacca */
   P.defT-=dt;P.defCool-=dt;
   if(ch.defend>0.4&&P.defCool<=0&&!attack&&Math.abs(RL.k[bi])<1/250){let B=null,bds=-1e9;
@@ -419,19 +426,21 @@ function trkAIDrive(P,dt){
   const he=Math.atan2(RL.ty[ahead],RL.tx[ahead])-c.psi,hn=Math.atan2(Math.sin(he),Math.cos(he)),beta=Math.atan2(c.vy,Math.max(c.vx,1));
   const dwant=Math.atan(V.lwb*RL.k[ahead])+hn+beta*0.5+Math.atan(-1.2*e/(c.vx+2));
   const gNow=trkWxGrip(P.tire,trkWetAt(bi,RL.e[bi])),aL=gNow*V.mu*9.81,dmax=Math.min(0.52,V.lwb*aL/Math.max(c.vx*c.vx,1)+TIRE_PEAK*1.35);
-  P.steerIn=clamp(dwant/dmax,-1,1);
+  /* da fermo o quasi (dopo un testacoda o quando viene rimesso in pista) non gira tutto lo sterzo: riparte e intanto si raddrizza */
+  const sMax=0.3+0.7*smooth01(c.vx,2,8);P.steerIn=clamp(dwant/dmax,-sMax,sMax);
   /* passo: livello, aderenza delle gomme adesso (fredde, surriscaldate, consumate) e acqua rispetto a quando ha calcolato il profilo */
   /* errore in corso: staccata lunga (arriva troppo forte in curva) o testacoda (il retrotreno parte, specie sul bagnato) */
   P.errT-=dt;P.errCool-=dt;const errLong=P.errT>0&&P.errKind==='lungo';
   const gf=Math.sqrt(Math.min(trkTireF(P.Tf,P.Wf,P.tire),trkTireF(P.Tr,P.Wr,P.tire))),
-    pk=P.pace*gf*Math.sqrt(gNow/Math.max(0.3,P.simG))*(1+(ch.wet-0.5)*0.06*TRK.wet)*(attack?1+ch.boost:1)*(errLong?1.13:1);
+    pk=P.pace*gf*Math.sqrt(gNow/Math.max(0.3,P.simG))*(1+(ch.wet-0.5)*0.06*TRK.wet)*(attack?1+ch.boost:1)*(errLong?(TRKDEF.urban?1.06:1.13):1);
   const vNow=Math.min(S.v[bi]*pk,vcap);
   const look=Math.max(2,Math.round((Math.max(c.vx,0)*0.2+4)/T.ds)),kA=(bi+look)%N,vA=Math.min(S.v[kA]*pk,vcap);
   const aCmd=(vA*vA-c.vx*c.vx)/(2*look*T.ds)+1.5*(vNow-c.vx),aB=Math.max(4,(P.lastG||V.m*9.81)/V.m);
   if(aCmd<-0.4){P.thr=0;P.brk=clamp(-aCmd/aB,0,1);}else{P.brk=0;P.thr=clamp(0.35+aCmd*0.5,0,1);}
   if(P.errT>0&&P.errKind==='spin'){P.thr=0.15;P.brk=0;}
   /* all'inizio di una staccata decisa può sbagliare: più spesso se irruento, se attacca o sul bagnato */
-  if(aCmd<-4&&P.errCool<=0&&P.errT<=0&&TRK.race.state!=='count'&&c.vx>22){const pr=ch.err*0.07*(1+2*TRK.wet*(1.4-ch.wet))*(attack?1.6:1);P.errCool=4;
+  if(aCmd<-4&&P.errCool<=0&&P.errT<=0&&TRK.race.state!=='count'&&c.vx>22){/* fra i muri di un cittadino i piloti rischiano meno: errori più rari e staccate lunghe più corte */
+    const pr=ch.err*0.07*(1+2*TRK.wet*(1.4-ch.wet))*(attack?1.6:1)*(TRKDEF.urban?0.35:1);P.errCool=4;
     if(Math.random()<pr){const spin=TRK.wet>0.35?Math.random()<0.55:Math.random()<0.18;P.errKind=spin?'spin':'lungo';P.errT=spin?0.9:1.7;P.errCool=28+Math.random()*20;P.errs++;
       if(spin){c.r+=(Math.random()<0.5?-1:1)*(0.9+Math.random()*0.5);}
       trkRadio(P,spin?`#${P.num} in testacoda${trkCornerAhead(bi)}!`:`#${P.num} lungo in staccata${trkCornerAhead(bi)}`);}}

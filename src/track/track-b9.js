@@ -1,9 +1,9 @@
 /* =========================================================
-   Campionato «Coppa Vespera»: sei gare sui tre circuiti con condizioni diverse, sette piloti fissi con nome e carattere,
+   Campionato «Coppa Vespera»: sette gare sui quattro circuiti con condizioni diverse (finale di notte nel cittadino di Porto Vespera), sette piloti fissi con nome e carattere,
    punti e giro veloce, crediti per migliorare l'auto (motore, aerodinamica, gomme, alleggerimento), avversari che crescono
    gara dopo gara. Il salvataggio è personale: nel database dell'artifact (cartella privata di chi gioca) e nel browser
    ========================================================= */
-const CH_ROUNDS=[{t:0,tod:'day',wx:0,laps:3},{t:1,tod:'sunset',wx:0,laps:3},{t:2,tod:'day',wx:0,laps:3},{t:0,tod:'night',wx:1,laps:3},{t:1,tod:'day',wx:3,laps:4},{t:2,tod:'sunset',wx:2,laps:3}];
+const CH_ROUNDS=[{t:0,tod:'day',wx:0,laps:3},{t:1,tod:'sunset',wx:0,laps:3},{t:2,tod:'day',wx:0,laps:3},{t:0,tod:'night',wx:1,laps:3},{t:1,tod:'day',wx:3,laps:4},{t:2,tod:'sunset',wx:2,laps:3},{t:3,tod:'night',wx:0,laps:3}];
 const CH_DRIVERS=[{id:'d0',n:'Marco Benetti',c:'#d19a0e',k:'supercar',ch:0,sk:0.012},{id:'d1',n:'Sofia Conti',c:'#2a6fb0',k:'vespera',ch:2,sk:0.008},{id:'d2',n:'Luca Moretti',c:'#123f30',k:'supercar',ch:3,sk:0.004},
   {id:'d3',n:'Giulia Rinaldi',c:'#e6e3da',k:'vespera',ch:4,sk:0.0},{id:'d4',n:'Paolo Zanetti',c:'#7a1f5c',k:'sedan',ch:5,sk:-0.002},{id:'d5',n:'Nico Bassi',c:'#9a4a22',k:'vespera',ch:1,sk:-0.006},{id:'d6',n:'Andrea Galli',c:'#3b3e43',k:'supercar',ch:0,sk:-0.01}];
 const CH_PTS=[10,8,6,5,4,3,2,1],CH_PRIZE=[1500,1100,850,650,500,380,280,200],CH_LVL=[0.9,0.935,0.965];
@@ -99,7 +99,7 @@ function chIntro(){
   chEl.innerHTML=`<div class="ch-in ch-intro"><header><div><small>Campionato</small><h2>Coppa Vespera</h2></div><button class="ch-x" aria-label="Chiudi">✕</button></header>
     <p>Sei gare sulle Prealpi, sul Montello e sul Grappa, di giorno, al tramonto, di notte e sotto la pioggia, contro sette piloti con il loro carattere. Ogni arrivo vale punti e crediti: spendili in officina per migliorare l'auto. Gli avversari, intanto, crescono.</p>
     <div class="ch-lvl">${['Facile','Medio','Difficile'].map((n,i)=>`<button data-lvl="${i}" class="${i===1?'on':''}">${n}</button>`).join('')}</div>
-    <footer><button class="ch-go"><span>Inizia la stagione</span><small>sei gare · otto auto</small></button></footer></div>`;
+    <footer><button class="ch-go"><span>Inizia la stagione</span><small>sette gare · otto auto</small></button></footer></div>`;
   let lvl=1;chEl.querySelectorAll('[data-lvl]').forEach(b=>b.onclick=()=>{lvl=+b.dataset.lvl;chEl.querySelectorAll('[data-lvl]').forEach(c=>c.classList.toggle('on',c===b));});
   chEl.querySelector('.ch-x').onclick=()=>chHub(false);chEl.querySelector('.ch-go').onclick=()=>{CH=chNew(lvl);chSave();chRender();chEl.querySelector('.ch-go').focus({preventScroll:true});};
   chEl.hidden=false;document.documentElement.classList.add('champ-open');chEl.querySelector('.ch-go').focus({preventScroll:true});

@@ -268,7 +268,7 @@ TAB='''  <section class="tab" id="tPista" hidden>
       <h2 style="margin-top:10px"><label for="trkKw">Potenza</label><output id="trkKwOut"></output></h2>
       <input type="range" id="trkKw" min="40" max="900" step="5" value="460">
       <h2 style="margin-top:10px">Gomme</h2><div class="seg" id="trkTires"></div>
-      <div class="toggles" style="margin-top:8px"><button class="tog" id="trkAssist" aria-pressed="true">Assistenze</button><button class="tog" id="trkSame" aria-pressed="false">Blocca massa e potenza</button><button class="tog" id="trkLine" aria-pressed="true">Traiettoria consigliata</button><button class="tog" id="trkDmg" aria-pressed="true">Danni</button></div>
+      <div class="toggles" style="margin-top:8px"><button class="tog" id="trkAssist" aria-pressed="true">Assistenze</button><button class="tog" id="trkSame" aria-pressed="false">Blocca massa e potenza</button><button class="tog" id="trkLine" aria-pressed="true">Traiettoria consigliata</button><button class="tog" id="trkDmg" aria-pressed="true">Danni</button><button class="tog" id="trkRb" aria-pressed="true">Scocca 3D (Rapier)</button></div>
       <button class="small-btn" id="trkTypical" style="margin-top:8px">Valori tipici di questa auto</button>
       <p class="note">Le assistenze (controllo di trazione e di stabilità, sterzo dosato) rendono l'auto guidabile da tastiera. La traiettoria consigliata si colora secondo la tua velocità: verde gas, giallo alza il piede, rosso frena. Con i danni gli urti piegano ali e sospensioni: l'auto tira da un lato e carica meno, finché non la ripari ai box (la sosta si allunga). Con «Blocca» massa e potenza restano uguali quando cambi auto, così il confronto riguarda solo l'aerodinamica.</p>
     </div>
@@ -302,13 +302,13 @@ rep('  <section class="tab" id="tAria" hidden>', TAB+'  <section class="tab" id=
 core=open(TR+'track-core.js').read()
 core=re.sub(r"if\(typeof module!=='undefined'\)module\.exports=\{[^\n]*\n","",core)
 assert 'module.exports' not in core
-page=open(TR+'track-a.js').read()+''.join(open(TR+f).read() for f in ['track-b1.js','track-b2.js','track-b3.js','track-b4.js','track-b5.js','track-b6.js','track-b7.js','track-b8.js','track-b9.js','track-b10.js','track-b11.js','track-b12.js','track-b13.js','track-b14.js','track-b15.js'])
+page=open(TR+'track-a.js').read()+''.join(open(TR+f).read() for f in ['track-b1.js','track-b2.js','track-b3.js','track-b4.js','track-b5.js','track-b6.js','track-b7.js','track-b8.js','track-b9.js','track-b10.js','track-b11.js','track-b12.js','track-b13.js','track-b14.js','track-b15.js','track-b16.js','track-b17.js'])
 # il sito è la cartella dist/: librerie in dist/lib (copiate da vendor/, niente CDN), immagini in dist/assets
 import json,shutil
-for d,src in [('lib',ROOT+'vendor/three'),('assets',SP+'assets')]:  # .hdr compresi
+for d,src in [('lib',ROOT+'vendor/three'),('lib',ROOT+'vendor/rapier'),('assets',SP+'assets')]:  # .hdr compresi
     os.makedirs(ROOT+'dist/'+d,exist_ok=True)
     for f in os.listdir(src):
-        if f.endswith(('.js','.jpg','.png','.hdr','.glb','.wasm')):shutil.copyfile(src+'/'+f,ROOT+'dist/'+d+'/'+f)
+        if f.endswith(('.js','.jpg','.png','.hdr','.glb','.wasm'))and not f.endswith('.cjs.js'):shutil.copyfile(src+'/'+f,ROOT+'dist/'+d+'/'+f)
 FOTO={k:'assets/'+f for k,f in [('gravelC','gravel-color.jpg'),('gravelN','gravel-normal.jpg'),('grassC','grass-color.jpg'),('asphC','asphalt-color.jpg')]}
 assert '/*@FOTO@*/{}' in page
 page=page.replace('/*@FOTO@*/{}',json.dumps(FOTO))

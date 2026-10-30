@@ -99,11 +99,12 @@ function trkEnsureData(){
   const kerb=new Uint8Array(N),grav=new Uint8Array(N);
   for(let i=0;i<N;i++){const k=T.k[i],ak=Math.abs(k);
     if(ak>1/190)for(let o=-14;o<=14;o++)kerb[(i+o+N)%N]|=3;
-    if(ak>1/150)for(let o=-28;o<=34;o++)grav[(i+o+N)%N]|=(k>0?2:1);}
+    if(ak>1/150&&!TRKDEF.urban)for(let o=-28;o<=34;o++)grav[(i+o+N)%N]|=(k>0?2:1);}
   /* barriere: lontane 12 m dal bordo (19 dove c'è ghiaia), più vicine all'interno delle curve strette */
   const bar=[new Float64Array(N),new Float64Array(N)];
   for(let s=0;s<2;s++){const sg=s===0?1:-1,raw=new Float64Array(N);
-    for(let i=0;i<N;i++){let b=hw+((grav[i]&(s===0?1:2))?19:12);const k=T.k[i];if(k*sg>0)b=Math.min(b,Math.max(hw+3,0.72/Math.abs(k)));raw[i]=b;}
+    /* in città: muri a 2,4 m dal bordo, con una strada di scampo all'esterno delle curve lente */
+    for(let i=0;i<N;i++){const k=T.k[i];let b=TRKDEF.urban?hw+(k*sg<-1/45?9:2.4):hw+((grav[i]&(s===0?1:2))?19:12);if(k*sg>0)b=Math.min(b,Math.max(hw+(TRKDEF.urban?2.4:3),0.72/Math.abs(k)));raw[i]=b;}
     const mn=new Float64Array(N);for(let i=0;i<N;i++){let m=1e9;for(let o=-12;o<=12;o++)m=Math.min(m,raw[(i+o+N)%N]);mn[i]=m;}
     for(let i=0;i<N;i++){let a=0;for(let o=-10;o<=10;o++)a+=mn[(i+o+N)%N];bar[s][i]=a/21;}}
   /* griglia per trovare in fretta il punto di pista più vicino */
@@ -115,7 +116,7 @@ function trkEnsureData(){
   TRK.pit=trkPitData();const pz=new Uint8Array(N);for(let q=TRK.pit.qIn-30;q<=TRK.pit.qOut+30;q++)pz[((q%N)+N)%N]=1;TRK.pitZone=pz;
   TRK.stands=[N-70,0,70].map(ci=>{const i=(ci+N)%N,off=-(bar[1][i]+12);return {X:T.X[i]+off*T.nx[i],Y:T.Y[i]+off*T.ny[i]};});
   /* lago nel punto dell'infield più lontano dalla pista, con il pelo dell'acqua alla quota del terreno */
-  {let best=0,bx=0,by=0;for(let X=-450;X<=650;X+=25)for(let Y=50;Y<=850;Y+=25){if(!trkInside(X,Y))continue;const d=trkDistTrack(X,Y,6);if(d>best){best=d;bx=X;by=Y;}}
+  TRK.lake=null;if(!TRKDEF.urban){let best=0,bx=0,by=0;for(let X=-450;X<=650;X+=25)for(let Y=50;Y<=850;Y+=25){if(!trkInside(X,Y))continue;const d=trkDistTrack(X,Y,6);if(d>best){best=d;bx=X;by=Y;}}
    const R=Math.min(120,best*0.5);TRK.lake=[bx,by,R,trkTerrain(bx,by)];}
 }
 /* corsia dei box: entrata dopo l'ultima curva, corsia oltre il muretto lungo il rettilineo, piazzole davanti ai garage, uscita dopo il traguardo.
@@ -218,6 +219,7 @@ function trkSurface(i,d){
   if(ad<=hw)return 'asfalto';
   if(ad<=hw+1.3&&(TRK.kerb[i]&bit))return 'cordolo';
   if((TRK.grav[i]&bit)&&ad<=hw+19)return 'ghiaia';
+  if(TRKDEF.urban)return 'asfalto';  // in città oltre il bordo c'è ancora asfalto, fino al muro
   return 'erba';
 }
 function trkLocate(X,Y,i0,win){
@@ -280,9 +282,9 @@ function trkBuildWorld(){
    const sun=new THREE.Mesh(new THREE.SphereGeometry(4,16,8),new THREE.MeshBasicMaterial({color:new THREE.Color(0xfff2d8).multiplyScalar(5)}));sun.position.set(-20,34,-15);es.add(sun);
    trkEnv=pmrem.fromScene(es,0.02).texture;}
   /* prato con le strisce del tosaerba */
-  const grassTex=trkGrassTex().map;
+  const grassTex=TRKDEF.urban?trkConcreteTex().map:trkGrassTex().map;
   /* prato a riquadri e spinto indietro nella profondità: così non litiga mai con l'asfalto che gli sta 5 cm sopra */
-  const grassMat=trkNightPatch(new THREE.MeshLambertMaterial({map:grassTex,vertexColors:true,polygonOffset:true,polygonOffsetFactor:4,polygonOffsetUnits:8}));TRK.grassMat=grassMat;grassMat.userData.wuv=6;grassMat.userData.mac=0.12;
+  const grassMat=trkNightPatch(new THREE.MeshLambertMaterial({map:grassTex,vertexColors:true,polygonOffset:true,polygonOffsetFactor:4,polygonOffsetUnits:8}));TRK.grassMat=grassMat;if(TRKDEF.urban)grassMat.color.setHex(0x46494d);grassMat.userData.wuv=6;grassMat.userData.mac=0.12;
   /* terreno con le colline attorno alla pista (celle da 12 m) e una pianura piatta oltre */
   {const g=new THREE.PlaneGeometry(3400,3400,280,280);g.rotateX(-Math.PI/2);const p=g.attributes.position,uv=g.attributes.uv;
    for(let k=0;k<p.count;k++){const X=p.getX(k)+110,Y=-(p.getZ(k)-430);p.setXYZ(k,X,trkGroundH(X,Y),-Y);uv.setXY(k,uv.getX(k)*3400/9000,uv.getY(k)*3400/9000);}
@@ -324,7 +326,7 @@ function trkBuildWorld(){
   /* barriere: guard rail metallico con una fascia bianca e rossa */
   const RT=trkRailTex();
   const railMat=trkNightPatch(new THREE.MeshStandardMaterial({map:RT.map,normalMap:RT.normal,metalness:0.55,roughness:0.45,side:THREE.DoubleSide,envMapIntensity:0.6}));
-  {const Pd=TRK.pit;trkRibbon(Pd.qB+32-N,Pd.qIn+28,i=>TRK.bar[0][i],0,0,4,railMat,0.95);trkRibbon(0,N,i=>-TRK.bar[1][i],0,0,4,railMat,0.95);}
+  if(!TRKDEF.urban){const Pd=TRK.pit;trkRibbon(Pd.qB+32-N,Pd.qIn+28,i=>TRK.bar[0][i],0,0,4,railMat,0.95);trkRibbon(0,N,i=>-TRK.bar[1][i],0,0,4,railMat,0.95);}
   /* traguardo a scacchi e caselle della griglia di partenza */
   const chk=canvasTex(64,(g,s,h)=>{const n=8,c=s/n;for(let y=0;y<2;y++)for(let x=0;x<n;x++){g.fillStyle=(x+y)%2?'#111':'#f4f4f4';g.fillRect(x*c,y*h/2,c,h/2);}},null,16);
   const line=new THREE.Mesh(new THREE.PlaneGeometry(1.6,T.w),new THREE.MeshStandardMaterial(Object.assign({map:chk,roughness:0.6},off)));line.rotation.x=-Math.PI/2;
@@ -433,8 +435,8 @@ function trkBuildWorld(){
    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));
    TRK.stars=new THREE.Points(g,new THREE.PointsMaterial({color:0xdfe8ff,size:1.6,sizeAttenuation:false,fog:false,transparent:true,opacity:0.9,depthWrite:false}));TRK.stars.visible=false;TRK.tw.add(TRK.stars);
    TRK.moon=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0xe8eeff,fog:false,depthWrite:false,transparent:true}));TRK.moon.scale.set(260,260,1);TRK.moon.position.set(110+1800,1500,-430-2600);TRK.moon.visible=false;TRK.tw.add(TRK.moon);}
-  /* Prealpi a nord, colline a sud */
-  {const segs=360,R0=3600,pos=[],col=[],idx=[];const cx=110,cy=430;
+  /* Prealpi a nord, colline a sud (in città lo sfondo sono i palazzi, track-b17) */
+  if(!TRKDEF.urban){const segs=360,R0=3600,pos=[],col=[],idx=[];const cx=110,cy=430;
    const hgt=a=>{const north=Math.max(0,Math.sin(a));let h=90+60*Math.sin(a*7+1)+40*Math.sin(a*17);h+=north*north*(520+260*Math.sin(a*5.3)+180*Math.sin(a*11.7+2)+90*Math.abs(Math.sin(a*29)));return h;};
    for(let k=0;k<=segs;k++){const a=k/segs*Math.PI*2,h=hgt(a),x=Math.cos(a),y=Math.sin(a);
      pos.push(cx+x*R0,-30,-(cy+y*R0),cx+x*(R0-200),h,-(cy+y*(R0-200)));
@@ -452,7 +454,7 @@ function trkWorldExtras(){
   const T=TRK.T,N=T.N,hw=T.w/2,steel=TRK.steel;
   const avoid=[];
   /* lago nel punto dell'infield più lontano dalla pista */
-  {const [bx,by,R,lh]=TRK.lake,pts=[];for(let k=0;k<48;k++){const a=k/48*Math.PI*2,r=R*(1+0.18*Math.sin(a*3+1)+0.1*Math.sin(a*5));pts.push(new THREE.Vector2(Math.cos(a)*r,Math.sin(a)*r));}
+  if(TRK.lake){const [bx,by,R,lh]=TRK.lake,pts=[];for(let k=0;k<48;k++){const a=k/48*Math.PI*2,r=R*(1+0.18*Math.sin(a*3+1)+0.1*Math.sin(a*5));pts.push(new THREE.Vector2(Math.cos(a)*r,Math.sin(a)*r));}
    const shp=new THREE.Shape(pts);
    const shore=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(pts.map(p=>p.clone().multiplyScalar(1.12))),1),new THREE.MeshLambertMaterial(Object.assign({color:0xb7a77f},trkOff)));
    shore.rotation.x=-Math.PI/2;shore.position.set(bx,lh+0.01,-by);TRK.tw.add(shore);
@@ -461,7 +463,7 @@ function trkWorldExtras(){
    const dock=new THREE.Mesh(new THREE.BoxGeometry(14,0.3,2.2),new THREE.MeshLambertMaterial({color:0x7a5a3a}));dock.position.set(bx+R*0.95,lh+0.35,-by);TRK.tw.add(dock);
    avoid.push([bx,by,R*1.25]);}
   /* casolari veneti e un campanile, lontano dalla pista */
-  {const wallC=[0xe7d3a8,0xd9b98a,0xefe3c8,0xcf9d6c],roofM=new THREE.MeshLambertMaterial({color:0x9a4a2a}),winM=new THREE.MeshLambertMaterial({color:0x3a2f28});
+  if(!TRKDEF.urban){const wallC=[0xe7d3a8,0xd9b98a,0xefe3c8,0xcf9d6c],roofM=new THREE.MeshLambertMaterial({color:0x9a4a2a}),winM=new THREE.MeshLambertMaterial({color:0x3a2f28});
    const house=(X,Y,rot,w,d,h)=>{const g=new THREE.Group();const walls=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),trkWorldMap(new THREE.MeshLambertMaterial({color:wallC[Math.floor(Math.random()*wallC.length)],map:trkConcreteTex().map}),2.5,null));walls.position.y=h/2;g.add(walls);
      const roof=new THREE.Mesh(new THREE.CylinderGeometry(d*0.62,d*0.62,w+0.6,3,1),roofM);roof.rotation.order='YXZ';roof.rotation.set(-Math.PI/2,Math.PI/2,0);roof.position.y=h+d*0.155;roof.scale.set(1,1,0.5);g.add(roof);
      for(let k=0;k<Math.floor(w/3);k++)for(const s of [1,-1]){const wdw=new THREE.Mesh(new THREE.PlaneGeometry(0.9,1.2),winM);wdw.position.set(-w/2+1.6+k*3,h*0.62,s*(d/2+0.02));if(s<0)wdw.rotation.y=Math.PI;g.add(wdw);}
@@ -479,7 +481,7 @@ function trkWorldExtras(){
     const croof=new THREE.Mesh(new THREE.CylinderGeometry(8,8,26.5,3,1),roofM);croof.rotation.order='YXZ';croof.rotation.set(-Math.PI/2,Math.PI/2,0);croof.position.set(-17,14.2,0);croof.scale.set(1,1,0.55);g.add(croof);
     g.position.set(X,trkGroundH(X,Y)-0.3,-Y);TRK.tw.add(g);avoid.push([X,Y,40]);}}
   /* alberi: conifere e latifoglie */
-  {const NT=1500,NB=700;
+  if(!TRKDEF.urban){const NT=1500,NB=700;
    const fol=new THREE.InstancedMesh(trkConiferGeo(),new THREE.MeshLambertMaterial({color:0xffffff,vertexColors:true}),NT),trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.25,0.35,2.2,6),new THREE.MeshLambertMaterial({color:0x5b4632}),NT+NB);
    const bfol=new THREE.InstancedMesh(trkShade(new THREE.IcosahedronGeometry(3.2,1),-3.2,3.2,0.55),new THREE.MeshLambertMaterial({color:0xffffff,flatShading:true,vertexColors:true}),NB);
    const M=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),ps=new THREE.Vector3(),c=new THREE.Color();let n=0,nb=0,nt=0,tries=0;

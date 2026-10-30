@@ -1,7 +1,8 @@
 /* stabilità ad alta velocità con le ali vere (aero-presets.json): in campo aperto, sterzata a gradino a 280 km/h
    e staccata in curva (frenata con lo sterzo girato, la classica causa del testacoda). Deriva massima in gradi.
    uso: node tools/stab-t.js   — AERO=file.json per altre tabelle */
-const {ctx,vm,TRK,H,tables,mkV}=require('./harness.js');
+const {ctx,vm,TRK,H,tables,mkV,ready}=require('./harness.js');
+ready.then(()=>{
 vm.runInContext('trkSurface=()=>"asfalto";TRKDEF=TRK_DEFS[0];',ctx);H.trkEnsureData();const T=TRK.T;
 const P=TRK.p[0],h=1/240;TRK.weather=0;TRK.wet=0;TRK.duo=false;TRK.wearMode=0;
 function place(V,v){const c=P.car,i=200;P.veh=V;P.isAI=false;P.tire=1;P.vo={};Object.assign(c,{X:T.X[i],Y:T.Y[i],psi:Math.atan2(T.ty[i],T.tx[i]),vx:v,vy:0,r:0,delta:0,ax:0,ay:0,i,d:0});
@@ -15,3 +16,5 @@ for(const assist of [true,false]){TRK.assist=assist;
     place(V,230/3.6);r['sterza e rilascia']=run(3,t=>{P.steerIn=t<1?0.8:t<1.4?-0.8:0;P.thr=t<1?0.8:0;P.brk=0;}).toFixed(1);
     rows.push(r);}}
 console.table(rows);
+console.log('scocca',ctx.RAPIER&&process.env.RB!=='0'?'Rapier':'piana');
+});
