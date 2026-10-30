@@ -12,3 +12,15 @@ si possono usare, modificare e ridistribuire senza attribuzione). Prese dalla ra
 | `asphalt-color.jpg` | Gravel006, colore → grigio scuro a contrasto ridotto | inerti dell'asfalto |
 
 `build.py` le incorpora in `dist/index.html` come data URI (track-b14.js); senza questi file il gioco usa le texture procedurali.
+
+## Fotografie panoramiche HDR (luce e riflessi in pista)
+
+Da [Poly Haven](https://polyhaven.com) (già HDRI Haven), licenza **CC0 1.0**, prese dalla raccolta
+[pmndrs/drei-assets](https://github.com/pmndrs/drei-assets) in versione 1k.
+
+| File | Uso |
+|---|---|
+| `rooitou_park_1k.hdr` | giorno sereno |
+| `immenstadter_horn_1k.hdr` | cielo coperto, bagnato e pioggia |
+| `venice_sunset_1k.hdr` | tramonto |
+| `dikhololo_night_1k.hdr` | notte |

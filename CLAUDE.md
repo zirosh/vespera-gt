@@ -1,14 +1,15 @@
 # Vespera GT — istruzioni per Claude
 
-App in un solo file HTML (three.js r128 da CDN, nessun bundler): una coupé generata in codice con
+Sito statico in `dist/` (pubblicato su GitHub Pages dal workflow `.github/workflows/pages.yml`, nessun bundler; three.js r128 copiato in `vendor/`): una coupé generata in codice con
 configuratore, laboratorio di forma, galleria del vento con CFD sulla GPU e un gioco di guida completo
 (tre circuiti, fisica a quattro ruote, piloti del computer, meteo, box, campionato, classifica condivisa).
 
 ## Lingua e stile
 - Testi dell'interfaccia e commenti nel codice in **italiano**, con frasi complete (niente gergo).
 - Codice compatto nello stile esistente: una funzione per responsabilità, nomi `trk*` per tutto ciò che riguarda la pista.
-- Niente dipendenze npm nella pagina: tutto deve restare un unico `dist/index.html` autosufficiente
-  (script esterni solo da cdnjs/jsdelivr con versione esatta, font da Google Fonts).
+- Niente bundler e niente CDN per il codice: le librerie stanno in `vendor/` (copiate da npm con versione esatta) e `build.py`
+  le mette in `dist/lib`; le immagini di `src/assets` finiscono in `dist/assets`. Solo i font vengono da Google Fonts.
+  Il sito va aperto da un server (GitHub Pages, o `python3 -m http.server --directory dist`): da file:// le texture non si caricano.
 
 ## Struttura
 ```
@@ -29,13 +30,16 @@ src/track/track-b10.js freni che si scaldano, sporco sulle carrozzerie, commissa
 src/track/track-b11.js ventola aspirante (fan car)
 src/track/track-b12.js traiettoria consigliata colorata (verde gas, giallo alza, rosso frena) sul profilo lapSim della tua auto
 src/track/track-b13.js danni: ali e sospensioni piegate dagli urti, convergenza storta, meno carico, riparazione ai box
-src/track/track-b14.js texture fotografiche CC0 (ghiaia, prato, inerti dell'asfalto) incorporate da src/assets
-src/assets/            immagini JPG CC0 di ambientCG (vedi LEGGIMI.md), messe in pagina come data URI da build.py
+src/track/track-b14.js texture fotografiche CC0 (ghiaia, prato, inerti dell'asfalto) e luce da HDRI Poly Haven per ora del giorno (trkEnvFor)
+src/track/track-b15.js interfaccia da console: menu iniziale e schermate (Gara veloce, Garage, Officina, Impostazioni) che spostano i blocchi esistenti
+src/console.css        stile dell'interfaccia da console (incollato dopo game.css)
+src/assets/            immagini JPG CC0 di ambientCG (vedi LEGGIMI.md), copiate in dist/assets da build.py
+vendor/three/          three.js r128, OrbitControls, GLTFLoader, RGBELoader (licenza MIT), copiati in dist/lib
 build.py               incolla i file in base.html e scrive dist/index.html
 tools/                 simulazioni e prove (vedi sotto)
 ```
 I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/* viste */`, nell'ordine
-`track-core, track-a, b1 … b14`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
+`track-core, track-a, b1 … b15`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
 
 ## Comandi
 - Build: `python3 build.py` → `dist/index.html` (va rifatta dopo ogni modifica in `src/`).
@@ -54,7 +58,7 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
   poi `python3 -m http.server 8766 --directory dist` in background e
   `python3 tools/shot.py 1280 720 "js…" "~ms" "@cattura.png" "?espressione"`.
   Le catture vanno guardate: molti problemi sono solo visivi.
-  Se la rete blocca i CDN: `npm i three@0.128.0` in una cartella e `PW_THREE=<cartella>/node_modules`; `PW_CHROMIUM=<chromium>` per il browser preinstallato.
+  `PW_CHROMIUM=<chromium>` per usare il browser preinstallato.
 
 ## Cose da sapere (errori già fatti)
 - **Agganci**: le estensioni nuove avvolgono le funzioni esistenti (`{const f=trkStop;trkStop=function(){f();…};}`) invece di modificarle;
@@ -76,4 +80,8 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
   Senza, l'anteriore scendeva senza limite, lo splitter andava in effetto suolo e ad alta velocità il carico si spostava davanti (sovrasterzo violento).
 - **Danni**: agganci dentro `trkPhysics` (`P.toe`, `P.toeR`, `P.wgk`) e aerodinamica avvolta per auto (`trkDmgAero`); i piloti del computer
   seguono il profilo ricalcolato con l'auto danneggiata e vanno ai box se i danni superano il 40 %.
+- **Interfaccia**: i blocchi dei vecchi pannelli (`#tAuto`, `#tSetup`, `#tAli`, `#tForma`, `#tAria`, `#tVista`, `#tPista` e i gruppi trovati per id)
+  vengono spostati da `csBuild()` nelle schermate di `#cs`; la logica resta legata agli id. `#tPista` deve restare con `hidden=false`
+  (trkDirty ricalcola il giro solo se è visibile). Il vecchio pannello `aside.panel` è vuoto e nascosto. Nuovi comandi: mettili nei blocchi
+  esistenti o in `csBuild()`, e nei test usa `csGo('race'|'garage'|'lab'|'opt'|'home')`.
 - Prestazioni: la scena con 8 auto fa ~1200 draw call; aggiungere oggetti uniti o istanziati, non mesh sciolte.

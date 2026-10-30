@@ -203,7 +203,7 @@ CSS=r'''
 }
 '''
 rep("@media (max-width:720px){\n  .panel{top:auto;", CSS+"@media (max-width:720px){\n  .panel{top:auto;")
-rep("@media (max-width:720px){\n  .panel{top:auto;", open(SP+'game.css').read()+"\n@media (max-width:720px){\n  .panel{top:auto;")
+rep("@media (max-width:720px){\n  .panel{top:auto;", open(SP+'game.css').read()+open(SP+'console.css').read()+"\n@media (max-width:720px){\n  .panel{top:auto;")
 rep('family=Saira+Condensed:wght@300;600;800&','family=Saira+Condensed:ital,wght@0,300;0,600;0,800;1,700;1,800&')
 
 HUD='''<div class="trk-hud" id="trkHud" hidden>
@@ -302,10 +302,14 @@ rep('  <section class="tab" id="tAria" hidden>', TAB+'  <section class="tab" id=
 core=open(TR+'track-core.js').read()
 core=re.sub(r"if\(typeof module!=='undefined'\)module\.exports=\{[^\n]*\n","",core)
 assert 'module.exports' not in core
-page=open(TR+'track-a.js').read()+''.join(open(TR+f).read() for f in ['track-b1.js','track-b2.js','track-b3.js','track-b4.js','track-b5.js','track-b6.js','track-b7.js','track-b8.js','track-b9.js','track-b10.js','track-b11.js','track-b12.js','track-b13.js','track-b14.js'])
-# texture fotografiche (src/assets) dentro la pagina come data URI
-import base64,json
-FOTO={k:'data:image/jpeg;base64,'+base64.b64encode(open(SP+'assets/'+f,'rb').read()).decode() for k,f in [('gravelC','gravel-color.jpg'),('gravelN','gravel-normal.jpg'),('grassC','grass-color.jpg'),('asphC','asphalt-color.jpg')]}
+page=open(TR+'track-a.js').read()+''.join(open(TR+f).read() for f in ['track-b1.js','track-b2.js','track-b3.js','track-b4.js','track-b5.js','track-b6.js','track-b7.js','track-b8.js','track-b9.js','track-b10.js','track-b11.js','track-b12.js','track-b13.js','track-b14.js','track-b15.js'])
+# il sito è la cartella dist/: librerie in dist/lib (copiate da vendor/, niente CDN), immagini in dist/assets
+import json,shutil
+for d,src in [('lib',ROOT+'vendor/three'),('assets',SP+'assets')]:  # .hdr compresi
+    os.makedirs(ROOT+'dist/'+d,exist_ok=True)
+    for f in os.listdir(src):
+        if f.endswith(('.js','.jpg','.png','.hdr','.glb','.wasm')):shutil.copyfile(src+'/'+f,ROOT+'dist/'+d+'/'+f)
+FOTO={k:'assets/'+f for k,f in [('gravelC','gravel-color.jpg'),('gravelN','gravel-normal.jpg'),('grassC','grass-color.jpg'),('asphC','asphalt-color.jpg')]}
 assert '/*@FOTO@*/{}' in page
 page=page.replace('/*@FOTO@*/{}',json.dumps(FOTO))
 rep('/* viste */\nlet camTween=null', core+page+'\n/* viste */\nlet camTween=null')
@@ -329,5 +333,9 @@ rep("  wingsVer++;layoutSideWings();syncWingControls();updateReadout();","  wing
 rep("rideEl.oninput=()=>{SETUP.ride=+rideEl.value/1000;","rideEl.oninput=()=>{SETUP.ride=+rideEl.value/1000;try{trkDirty();}catch(e){}")
 rep("    labBuild();const A=labFrontalArea(LAB);labResult=labDrag(LAB,A);labSyncControls();labRender();","    labBuild();const A=labFrontalArea(LAB);labResult=labDrag(LAB,A);labSyncControls();labRender();try{trkDirty();}catch(e){}")
 rep("  if(G3.active)g3Dirty();\n  updateLegend();\n}","  if(G3.active)g3Dirty();\n  try{trkDirty();}catch(e){}\n  updateLegend();\n}")
+rep('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>','<script src="lib/three.min.js"></script>')
+rep('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>','<script src="lib/OrbitControls.js"></script>')
+rep('<script src="lib/OrbitControls.js"></script>','<script src="lib/OrbitControls.js"></script>\n<script src="lib/RGBELoader.js"></script>')
+rep('<link rel="preconnect" href="https://fonts.googleapis.com">','<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Cpath d=%27M4 24 12 8h18l-8 16z%27 fill=%27%23ff4b2b%27/%3E%3C/svg%3E">\n<link rel="preconnect" href="https://fonts.googleapis.com">')
 open(P,'w').write(s)
 print('ok',len(s))

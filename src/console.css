@@ -1,0 +1,87 @@
+/* =========================================================
+   Interfaccia da console (track-b15.js): menu a tutto schermo, schermate con un solo pannello, HUD essenziale
+   ========================================================= */
+html.cs-on aside.panel,html.cs-on .nameplate,html.cs-on .hint,html.cs-on #gmDock,html.cs-on #trkGo,html.cs-on #trkCarNote{display:none!important}
+.cs{position:fixed;inset:0;z-index:5;pointer-events:none;font-family:"Saira",sans-serif;color:#eef2f5}
+html.racing:not(.panel-open) .cs,html.champ-open .cs,html:not(.cs-on) .cs{display:none}
+.cs [hidden]{display:none!important}
+@keyframes csIn{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@keyframes csPane{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+
+/* intestazione: marchio e nome della schermata */
+.cs-top{position:absolute;left:clamp(16px,3vw,48px);top:clamp(14px,3vh,34px);display:flex;align-items:baseline;gap:16px}
+.cs-brand{font:800 italic clamp(34px,5vw,76px)/.9 "Saira Condensed",sans-serif;text-transform:uppercase;letter-spacing:.005em;text-shadow:0 6px 30px rgba(0,0,0,.5);transition:font-size .25s}
+.cs-brand b{color:var(--gm-acc,#ff4b2b);font-weight:800}
+html.cs-sub .cs-brand{font-size:24px}
+.cs-crumb{font:700 italic 24px/1 "Saira Condensed",sans-serif;text-transform:uppercase;letter-spacing:.05em}
+.cs-crumb:not(:empty)::before{content:"/";margin-right:14px;color:var(--gm-acc,#ff4b2b)}
+
+/* menu principale */
+.cs-home{position:absolute;left:clamp(16px,3vw,48px);top:52%;transform:translateY(-50%);display:flex;flex-direction:column;gap:2px;width:min(460px,calc(100vw - 32px));pointer-events:auto}
+.cs-item{all:unset;box-sizing:border-box;cursor:pointer;display:block;position:relative;isolation:isolate;padding:12px 24px 12px 22px;animation:csIn .45s both;animation-delay:calc(var(--i)*60ms)}
+.cs-item b{display:block;font:800 italic clamp(28px,3.2vw,44px)/1 "Saira Condensed",sans-serif;text-transform:uppercase;color:rgba(255,255,255,.5);transition:color .15s,transform .2s}
+.cs-item small{display:block;font:500 13px/1.3 "Saira",sans-serif;color:#ffe3dc;margin-top:0;max-height:0;opacity:0;overflow:hidden;transition:max-height .2s,opacity .2s,margin .2s}
+.cs-item::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,var(--gm-acc,#ff4b2b) 0%,rgba(255,75,43,.55) 60%,rgba(255,75,43,0) 100%);transform:skewX(-14deg) scaleX(0);transform-origin:left;transition:transform .22s}
+.cs-item:hover b,.cs-item:focus b{color:#fff;transform:translateX(10px)}
+.cs-item:hover small,.cs-item:focus small{max-height:22px;opacity:1;margin-top:5px;transform:translateX(10px)}
+.cs-item:hover::before,.cs-item:focus::before{transform:skewX(-14deg) scaleX(1)}
+.cs-item:focus{outline:none}
+html.pad .cs-item:focus{outline:none!important}
+
+/* schermate: un pannello a destra con le schede, un riquadro a sinistra */
+.cs-scr{position:absolute;inset:0;pointer-events:none}
+.cs-pane{position:absolute;right:clamp(12px,2vw,32px);top:clamp(64px,9vh,92px);bottom:60px;width:min(470px,calc(100vw - 24px));display:flex;flex-direction:column;pointer-events:auto;
+  background:linear-gradient(180deg,rgba(14,18,23,.94),rgba(7,9,12,.9));border:1px solid rgba(255,255,255,.08);border-top:3px solid var(--gm-acc,#ff4b2b);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 30px 80px rgba(0,0,0,.45);animation:csPane .35s both;color:#eef2f5}
+.cs-tabs{display:flex;gap:2px;padding:6px 10px 0;border-bottom:1px solid rgba(255,255,255,.08);overflow-x:auto;scrollbar-width:none;flex:none}
+.cs-tabs button{all:unset;cursor:pointer;white-space:nowrap;padding:10px 12px 11px;font:700 italic 17px/1 "Saira Condensed",sans-serif;text-transform:uppercase;letter-spacing:.04em;color:#8d98a3;border-bottom:3px solid transparent;margin-bottom:-1px}
+.cs-tabs button:hover{color:#dfe5ea}
+.cs-tabs button[aria-selected="true"]{color:#fff;border-bottom-color:var(--gm-acc,#ff4b2b)}
+.cs-body{flex:1;overflow:auto;padding:14px 20px 24px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
+.cs-body .tab{display:block}
+.cs-body .group{margin-bottom:18px}
+.cs-body .group h2{font:700 12px/1.2 "Saira",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#8d98a3}
+.cs-left{position:absolute;left:clamp(16px,3vw,48px);bottom:64px;width:min(390px,calc(100vw - 32px));pointer-events:auto;animation:csIn .35s both}
+.cs-left .group,.cs-left .gm-stats{background:linear-gradient(180deg,rgba(14,18,23,.9),rgba(7,9,12,.86));border-left:3px solid var(--gm-acc2,#36d1ff);padding:14px 18px;margin:0}
+.cs-left .cxbig{font:800 italic 46px/1 "Saira Condensed",sans-serif;color:#fff}
+.cs-go{all:unset;box-sizing:border-box;cursor:pointer;flex:none;display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:14px 22px;
+  background:linear-gradient(90deg,var(--gm-acc,#ff4b2b),#ff8a2a);color:#fff;transition:filter .15s}
+.cs-go span{font:800 italic 30px/1 "Saira Condensed",sans-serif;text-transform:uppercase}
+.cs-go small{font:600 11px "Saira",sans-serif;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.cs-go:hover,.cs-go:focus{filter:brightness(1.12)}
+
+/* barra dei tasti in basso */
+.cs-keys{position:absolute;left:0;right:0;bottom:0;height:50px;display:flex;align-items:center;gap:22px;padding:0 clamp(16px,3vw,48px);pointer-events:auto;
+  font:600 11px "Saira",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#8d98a3;background:linear-gradient(0deg,rgba(0,0,0,.65),rgba(0,0,0,0))}
+.cs-keys kbd{display:inline-block;min-width:18px;padding:2px 6px;margin-right:4px;border:1px solid rgba(255,255,255,.28);border-radius:4px;font:700 11px "Saira",sans-serif;color:#fff;text-align:center}
+.cs-back{all:unset;cursor:pointer;margin-left:auto;padding:8px 16px;border:1px solid rgba(255,255,255,.22);font:700 italic 15px "Saira Condensed",sans-serif;text-transform:uppercase;color:#fff}
+.cs-back:hover,.cs-back:focus{border-color:var(--gm-acc,#ff4b2b)}
+.cs[data-s="home"] .cs-back,.cs[data-s="home"] .cs-back-k,.cs[data-s="home"] .cs-tab-k,.cs[data-s="race"] .cs-tab-k{display:none}
+
+/* spiegazioni lunghe nascoste (Impostazioni → Guida → Mostra le spiegazioni) */
+html.cs-on:not(.cs-notes) .cs .note:not([id]){display:none}
+
+/* impostazioni aperte in gara: solo il pannello, sopra la pista */
+html.racing.panel-open .cs{background:rgba(0,0,0,.35);pointer-events:auto}
+html.racing.panel-open .cs-left,html.racing.panel-open .cs-top,html.racing.panel-open .cs-tab-k{display:none}
+
+/* galleria del vento accesa: il pannello resta, il resto si fa da parte */
+html.tunnel .cs-left{display:none}
+
+/* HUD di gara essenziale: i tasti spariscono dopo qualche secondo, i pulsanti in alto compaiono muovendo il mouse */
+html.cs-on.racing #thKeys{transition:opacity 1.2s}
+html.cs-on.racing.cs-keys-off #thKeys{opacity:0}
+html.cs-on.racing:not(.cs-mouse):not(.touchy):not(.panel-open) .th-btns{opacity:0;pointer-events:none}
+html.cs-on .th-btns{transition:opacity .35s}
+html.cs-on .g-info .v-tire,html.cs-on .g-info .v-aero{display:none}
+
+@media (max-width:720px){
+  .cs-home{top:auto;bottom:70px;transform:none}
+  .cs-item{padding:9px 16px}
+  .cs-item small{display:none}
+  .cs-pane{top:auto;bottom:56px;height:58%;right:8px;left:8px;width:auto}
+  .cs-left{display:none}
+  .cs-keys span{display:none}
+  .cs-go span{font-size:24px}
+  .cs-go small{display:none}
+}

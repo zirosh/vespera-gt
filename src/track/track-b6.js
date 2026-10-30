@@ -4,8 +4,24 @@
    LB replay · RB clacson · View rimetti in pista · Menu pausa · croce: telecamera e mescola al box
    ========================================================= */
 const PAD_B={A:0,B:1,X:2,Y:3,LB:4,RB:5,LT:6,RT:7,VIEW:8,MENU:9,LS:10,RS:11,UP:12,DOWN:13,LEFT:14,RIGHT:15};
-const PADS={prev:[[],[]],names:['',''],rumbleT:[0,0],menuT:0,idlePrev:[]};
-function trkPadList(){return (navigator.getGamepads?[...navigator.getGamepads()]:[]).filter(p=>p&&p.connected);}
+const PADS={prev:[[],[]],names:['',''],rumbleT:[0,0],menuT:0,idlePrev:[],blocked:false};
+/* pad collegati. Dentro una pagina incorporata il browser può vietare i controller (getGamepads lancia SecurityError):
+   allora si gioca da tastiera e il pannello spiega come fare. I pad senza mappatura standard vengono tradotti */
+function trkPadList(){let L=[];
+  try{L=navigator.getGamepads?[...navigator.getGamepads()]:[];PADS.blocked=false;}catch(e){PADS.blocked=true;return [];}
+  return L.filter(p=>p&&p.connected).map(padNorm);}
+/* mappatura non standard (Firefox su Linux e macOS, alcuni pad Bluetooth): disposizione XInput con i grilletti come assi
+   (−1 a riposo, ma 0 finché non si toccano la prima volta) e la croce come due assi */
+const PAD_RAW={trig:{}};
+function padNorm(p){
+  if(p.mapping==='standard'||p.axes.length<6||p.buttons.length<10)return p;
+  const ax=p.axes,b=i=>p.buttons[i]||{pressed:false,value:0},seen=PAD_RAW.trig[p.index]||(PAD_RAW.trig[p.index]={});
+  const trig=i=>{const v=ax[i];if(v!==0)seen[i]=true;const x=seen[i]?clamp((v+1)/2,0,1):0;return {pressed:x>0.5,value:x};};
+  const hx=ax.length>=8?ax[6]:0,hy=ax.length>=8?ax[7]:0,dir=on=>({pressed:on,value:on?1:0});
+  return {id:p.id,index:p.index,connected:true,mapping:'standard',vibrationActuator:p.vibrationActuator,
+    buttons:[b(0),b(1),b(2),b(3),b(4),b(5),trig(2),trig(5),b(6),b(7),b(9),b(10),dir(hy<-0.5),dir(hy>0.5),dir(hx<-0.5),dir(hx>0.5),b(8)],
+    axes:[ax[0],ax[1],ax[3],ax[4]]};
+}
 /* il pad che comanda il giocatore k: in due il primo e il secondo, da soli il primo collegato */
 function trkPadFor(k){const L=trkPadList();return TRK.split?L[k]||null:(k===0?L[0]||null:null);}
 const padVal=(p,i)=>p&&p.buttons[i]?p.buttons[i].value||(p.buttons[i].pressed?1:0):0;
@@ -62,7 +78,23 @@ function trkPadFrame(dt){
   if(TRK.paused||TRK.replay.on||!document.getElementById('thRace').hidden){padStore(0,p);if(TRK.split)padStore(1,trkPadFor(1));}
 }
 /* fuori dalla pista: Menu sul pad scende in pista */
-function trkPadIdle(){const p=trkPadList()[0];if(!p)return;if(padOn(p,PAD_B.MENU)&&!PADS.idlePrev[PAD_B.MENU]&&busy.hidden)trkStart();for(let i=0;i<p.buttons.length;i++)PADS.idlePrev[i]=padOn(p,i);}
+/* fuori dalla pista il pad comanda anche il garage: croce o levetta per spostarsi fra i comandi visibili, A conferma,
+   croce a sinistra e a destra cambia i cursori, LB e RB cambiano scheda, B torna indietro, Menu scende in pista */
+function trkPadIdle(){const L=trkPadList(),p=L[0];document.documentElement.classList.toggle('pad',!!p);if(!p)return;
+  const was=i=>!!PADS.idlePrev[i],hit=i=>padOn(p,i)&&!was(i),now=performance.now();
+  if(hit(PAD_B.MENU)&&busy.hidden)trkStart();
+  else if(busy.hidden){
+    if(hit(PAD_B.LB)||hit(PAD_B.RB)){const tb=[...document.querySelectorAll('[role="tab"]')].filter(b=>b.offsetParent!==null),i=tb.findIndex(b=>b.getAttribute('aria-selected')==='true');
+      if(tb.length){const b=tb[(i+(hit(PAD_B.RB)?1:tb.length-1))%tb.length];b.click();b.focus({preventScroll:true});}}
+    const els=[...document.querySelectorAll('button,input,select,[role="tab"]')].filter(e=>e.offsetParent!==null&&!e.disabled&&e.closest('#cs,.panel,.gm-bar,.tabs,[role="dialog"]'));
+    let i=els.indexOf(document.activeElement);const y=p.axes[1]||0,x=p.axes[0]||0;let mv=0,adj=0;
+    if(hit(PAD_B.DOWN))mv=1;else if(hit(PAD_B.UP))mv=-1;else if(now>PADS.menuT&&Math.abs(y)>0.6){mv=y>0?1:-1;PADS.menuT=now+220;}
+    if(hit(PAD_B.RIGHT))adj=1;else if(hit(PAD_B.LEFT))adj=-1;else if(now>PADS.menuT&&Math.abs(x)>0.6){adj=x>0?1:-1;PADS.menuT=now+140;}
+    if(els.length&&(mv||(adj&&i<0))){i=i<0?0:(i+(mv||adj)+els.length)%els.length;els[i].focus({preventScroll:false});els[i].scrollIntoView({block:'nearest'});}
+    else if(adj&&i>=0){const e=els[i];if(e.type==='range'){adj>0?e.stepUp():e.stepDown();e.dispatchEvent(new Event('input',{bubbles:true}));}else{const j=(i+adj+els.length)%els.length;els[j].focus({preventScroll:false});}}
+    if(hit(PAD_B.A)&&i>=0&&els[i].type!=='range')els[i].click();
+    if(hit(PAD_B.B)&&!csBack()&&document.activeElement)document.activeElement.blur();}
+  for(let i=0;i<p.buttons.length;i++)PADS.idlePrev[i]=padOn(p,i);}
 /* navigazione nei riquadri con bottoni: croce o levetta per spostarsi, A conferma, B torna indietro */
 function trkMenuPad(k,p,box){
   const bs=[...box.querySelectorAll('button')].filter(b=>b.offsetParent!==null);if(!bs.length)return;
@@ -102,8 +134,12 @@ function trkHorn(on){
 /* ---------- pannello: stato del controller ---------- */
 let padPanelT=0;
 function trkPadPanel(){const now=performance.now();if(now<padPanelT)return;padPanelT=now+1000;const el=document.getElementById('trkPadState');if(!el)return;
-  const L=trkPadList();el.textContent=L.length?L.map((p,i)=>`${TRK.split?`Giocatore ${i+1}: `:''}${p.id.replace(/\(.*?\)/g,'').trim()||'controller'}${p.vibrationActuator?'':' (senza vibrazione)'}`).join(' · '):'Nessun controller collegato: collegalo e premi un tasto.';}
-window.addEventListener('gamepadconnected',()=>{padPanelT=0;trkPadPanel();});
+  const L=trkPadList();el.textContent=PADS.blocked?'Il browser non permette di usare il controller dentro questa pagina incorporata: apri il gioco in una scheda a sé (o dal file dist/index.html) e premi un tasto.':L.length?L.map((p,i)=>`${TRK.split?`Giocatore ${i+1}: `:''}${p.id.replace(/\(.*?\)/g,'').trim()||'controller'}${p.vibrationActuator?'':' (senza vibrazione)'}`).join(' · '):'Nessun controller: collegalo e premi un tasto qualsiasi (il browser lo mostra solo dopo la prima pressione).';}
+/* avviso breve nel garage (in pista c'è trkToast) */
+function gmToast(t){let el=document.getElementById('gmToast');if(!el){el=document.createElement('div');el.id='gmToast';el.setAttribute('role','status');document.body.appendChild(el);}
+  el.textContent=t;el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>{el.hidden=true;},4200);}
+window.addEventListener('gamepadconnected',e=>{padPanelT=0;trkPadPanel();const nm=(e.gamepad.id||'').replace(/\(.*?\)/g,'').trim()||'Controller';
+  if(!TRK.on)gmToast(`${nm} collegato: croce per muoverti, A per scegliere, Menu per scendere in pista`);});
 window.addEventListener('gamepaddisconnected',()=>{padPanelT=0;trkPadPanel();});
 
 /* =========================================================

@@ -6,11 +6,14 @@ fino a otto auto con piloti del computer, meteo variabile, box, danni (ali e sos
 texture fotografiche CC0, controller Xbox, schermo diviso, campionato con officina.
 
 ## Provarla
-Apri `dist/index.html` in un browser (serve la connessione per three.js e i font), oppure:
+Online su GitHub Pages: https://zirosh.github.io/vespera-gt/ (si aggiorna a ogni modifica di `main`;
+la prima volta va attivato in Settings → Pages → Source: GitHub Actions).
+
+In locale, dalla cartella del progetto:
 ```
 python3 -m http.server 8000 --directory dist
 ```
-e vai su http://localhost:8000.
+e vai su http://localhost:8000 (aprendo il file con doppio clic le texture non si caricano).
 
 ## Modificarla
 I sorgenti sono in `src/`; dopo ogni modifica:

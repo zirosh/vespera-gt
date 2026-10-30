@@ -287,3 +287,7 @@ html.gm .nameplate p{display:none}
 .ch-grid{margin-top:16px}
 .ch-shop-h{margin-top:16px!important}
 .ch-in footer{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(6,8,10,0),rgba(6,8,10,.96) 35%);padding:22px 0 10px;margin-top:8px}
+
+/* controller: avviso nel garage e cornice ben visibile sul comando scelto con la croce */
+#gmToast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:rgba(12,15,20,.92);color:#fff;padding:10px 16px;border-left:3px solid var(--gm-acc,#ff4b2b);font:600 14px Saira,sans-serif;max-width:min(560px,calc(100vw - 32px))}
+html.pad :focus{outline:3px solid #ffd23e!important;outline-offset:2px}
