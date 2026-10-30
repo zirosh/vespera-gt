@@ -37,6 +37,7 @@ src/track/track-b17.js circuito cittadino (TRKDEF.urban): muri con rete, palazzi
 src/track/track-b18.js asfalto fotografico Poly Haven su tutti i circuiti, modelli glTF CC0 istanziati (panchine, fioriere, barili, gomme)
 src/track/track-b19.js assetto nel Garage (molle, barre antirollio → SETUP.kf/kr ed equilibrium, scocca Rapier dei giocatori), ruote che seguono le molle, vibrazione dai carichi
 src/track/track-b20.js anteprima grande del circuito in Gara veloce, riepilogo di fine gara (posizioni, giro migliore, velocità massima, danni, distacco per giro)
+src/track/track-b21.js occlusione ambientale SSAO (profondità dalla DepthTexture del render target della scena) e FXAA finale, dentro la post-produzione
 src/console.css        stile dell'interfaccia da console (incollato dopo game.css)
 src/assets/            immagini JPG CC0 di ambientCG (vedi LEGGIMI.md), copiate in dist/assets da build.py
 vendor/three/          three.js r128, OrbitControls, GLTFLoader, RGBELoader (licenza MIT), copiati in dist/lib
@@ -45,7 +46,7 @@ build.py               incolla i file in base.html e scrive dist/index.html
 tools/                 simulazioni e prove (vedi sotto)
 ```
 I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/* viste */`, nell'ordine
-`track-core, track-a, b1 … b20`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
+`track-core, track-a, b1 … b21`. Le dichiarazioni di funzione sono quindi tutte visibili fra loro.
 
 ## Comandi
 - Build: `python3 build.py` → `dist/index.html` (va rifatta dopo ogni modifica in `src/`).
@@ -110,4 +111,7 @@ I file `track-*.js` finiscono dentro lo stesso IIFE di `base.html`, prima di `/*
   posizione valida con una scocca nuova. Non togliere queste protezioni.
 - **Circuito cittadino**: `TRKDEF.urban` cambia barriere (muri a 2,4 m, strade di scampo all'esterno delle curve lente), niente ghiaia
   né lago, superficie fuori dal bordo = asfalto, scenario di track-b17. Il mare è a X > −60, Y > 610: niente palazzi lì.
+- **three.js resta alla r128**: dalla r148 non ci sono più `examples/js` e cambiano colori, luci e render target multicampione;
+  aggiornare vorrebbe dire riscrivere materiali e post-produzione. SSAO e FXAA (track-b21) avvolgono `ppEnsure` e `ppFinal` di track-b5:
+  `PP.rt.depthTexture` deve restare DepthStencil a 24 bit (stesso formato del buffer multicampione, altrimenti la copia fallisce).
 - Prestazioni: la scena con 8 auto fa ~1200 draw call; aggiungere oggetti uniti o istanziati, non mesh sciolte.

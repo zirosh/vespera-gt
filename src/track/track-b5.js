@@ -81,8 +81,10 @@ function trkPostRender(views){
   const U=ppComp.uniforms;U.tScene.value=PP.rt.texture;['tB0','tB1','tB2','tB3','tB4'].forEach((k,i)=>U[k].value=PP.m[i].a.texture);
   U.uBloom.value=bloom?(night?0.85:TRK.rain>0.3?0.35:0.2):0;U.uExp.value=renderer.toneMappingExposure;U.uTexel.value.set(1/w,1/h);U.tDrops.value=DROP.tex;U.uDrops.value=bloom&&DROP.list.length?1:0;
   {const P=views[0].P,one=views.length===1&&!TRK.replay.on,ck=P.cam==='cockpit';U.uVig.value=TRK.fxPost?(ck?0.4:0.28):0;U.uBlur.value=one&&TRK.fxPost?smooth01(P.kmh,150,330)*(ck?0.5:0.8):0;U.uBlurC.value.set(0.5,ck?0.6:0.56);}
-  renderer.setRenderTarget(null);renderer.setScissorTest(false);renderer.setViewport(0,0,W,H);PP.quad.material=ppComp;renderer.render(PP.scene,PP.cam);
+  ppFinal(views,W,H);
 }
+/* ultimo passaggio sullo schermo (track-b21 lo avvolge per l'occlusione ambientale e l'antialiasing) */
+function ppFinal(views,W,H){renderer.setRenderTarget(null);renderer.setScissorTest(false);renderer.setViewport(0,0,W,H);PP.quad.material=ppComp;renderer.render(PP.scene,PP.cam);}
 
 /* ---------- riflessi: una seconda telecamera, specchiata sotto la strada, vede solo le auto e le luci ---------- */
 const RF={rt:null,w:0,h:0,cam:new THREE.PerspectiveCamera(),U:{uRefl:{value:null},uReflMat:{value:new THREE.Matrix4()},uReflK:{value:0},uRTime:{value:0}},lights:false};

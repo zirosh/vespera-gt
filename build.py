@@ -302,7 +302,7 @@ rep('  <section class="tab" id="tAria" hidden>', TAB+'  <section class="tab" id=
 core=open(TR+'track-core.js').read()
 core=re.sub(r"if\(typeof module!=='undefined'\)module\.exports=\{[^\n]*\n","",core)
 assert 'module.exports' not in core
-page=open(TR+'track-a.js').read()+''.join(open(TR+f).read() for f in ['track-b1.js','track-b2.js','track-b3.js','track-b4.js','track-b5.js','track-b6.js','track-b7.js','track-b8.js','track-b9.js','track-b10.js','track-b11.js','track-b12.js','track-b13.js','track-b14.js','track-b15.js','track-b16.js','track-b17.js','track-b18.js','track-b19.js','track-b20.js'])
+page=open(TR+'track-a.js').read()+''.join(open(TR+f).read() for f in ['track-b1.js','track-b2.js','track-b3.js','track-b4.js','track-b5.js','track-b6.js','track-b7.js','track-b8.js','track-b9.js','track-b10.js','track-b11.js','track-b12.js','track-b13.js','track-b14.js','track-b15.js','track-b16.js','track-b17.js','track-b18.js','track-b19.js','track-b20.js','track-b21.js'])
 # il sito è la cartella dist/: librerie in dist/lib (copiate da vendor/, niente CDN), immagini in dist/assets
 import json,shutil
 for d,src in [('lib',ROOT+'vendor/three'),('lib',ROOT+'vendor/rapier'),('assets',SP+'assets')]:  # .hdr compresi
